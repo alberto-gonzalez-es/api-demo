@@ -1,0 +1,204 @@
+name: openapi-maven-deploy
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    types:
+      - closed
+    paths:
+      - 'api/rest/**'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  detect-changes:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    outputs:
+      apis_json: ${{ steps.detect.outputs.apis_json }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps
+        run: pip install pyyaml
+
+      - name: Detect changed OpenAPI definitions
+        id: detect
+        run: |
+          python << 'PY'
+          import os, json, subprocess, pathlib, sys
+          import yaml
+
+          base_sha = os.environ["GITHUB_EVENT_BASE_SHA"]
+          head_sha = os.environ["GITHUB_EVENT_HEAD_SHA"]
+          base_branch = os.environ["GITHUB_EVENT_BASE_REF"]
+
+          result = subprocess.run(
+              ["git", "diff", "--name-only", base_sha, head_sha],
+              capture_output=True,
+              text=True,
+              check=True,
+          )
+          files = [f for f in result.stdout.splitlines() if f]
+
+          apis = []
+          for f in files:
+              # We want paths like api/rest/<API_NAME>/openapi.yml|yaml
+              if not f.startswith("api/rest/"):
+                  continue
+              if not (f.endswith("openapi.yml") or f.endswith("openapi.yaml")):
+                  continue
+
+              parts = f.split("/")
+              if len(parts) < 4:
+                  continue
+              api_name = parts[2]  # api/rest/<api_name>/...
+
+              spec_path = pathlib.Path(f)
+              if not spec_path.is_file():
+                  continue
+
+              data = yaml.safe_load(spec_path.read_text(encoding="utf-8"))
+              info = data.get("info", {})
+              base_version = info.get("version")
+              if not base_version:
+                  print(f"[WARN] info.version not found in {spec_path}", file=sys.stderr)
+                  continue
+
+              if base_branch == "main":
+                  final_version = base_version
+              elif base_branch == "develop":
+                  final_version = f"{base_version}-SNAPSHOT"
+              else:
+                  final_version = f"{base_version}-beta"
+
+              apis.append({
+                  "name": api_name,
+                  "spec_path": f,
+                  "base_version": base_version,
+                  "final_version": final_version,
+                  "branch": base_branch,
+              })
+
+          apis_json = json.dumps(apis)
+          print("Detected APIs:", apis_json)
+
+          github_output = os.environ.get("GITHUB_OUTPUT")
+          if github_output:
+              with open(github_output, "a", encoding="utf-8") as fh:
+                  fh.write(f"apis_json={apis_json}\n")
+          PY
+        env:
+          GITHUB_EVENT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          GITHUB_EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_EVENT_BASE_REF: ${{ github.event.pull_request.base.ref }}
+
+  build-and-deploy:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.apis_json != '' && needs.detect-changes.outputs.apis_json != '[]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps
+        run: pip install pystache
+
+      - name: Configure Maven for GitHub Packages
+        run: |
+          mkdir -p ~/.m2
+          cat <<EOF > ~/.m2/settings.xml
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+            <servers>
+              <server>
+                <id>github</id>
+                <username>${GITHUB_ACTOR}</username>
+                <password>${GITHUB_TOKEN}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+
+      - name: Generate POMs from Mustache and deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APIS_JSON: ${{ needs.detect-changes.outputs.apis_json }}
+        run: |
+          python << 'PY'
+          import os, json, pathlib, shutil, subprocess
+          import pystache
+
+          apis_json = os.environ["APIS_JSON"]
+          apis = json.loads(apis_json)
+          if not apis:
+              print("Nothing to deploy.")
+              raise SystemExit(0)
+
+          group_id = "es.alberto.gonzalez.api"
+          template_path = pathlib.Path("template/api/rest/maven/pom.mustache")
+          template = template_path.read_text(encoding="utf-8")
+          renderer = pystache.Renderer()
+
+          for api in apis:
+              api_name = api["name"]
+              spec_path = pathlib.Path(api["spec_path"])
+              final_version = api["final_version"]
+
+              out_dir = pathlib.Path("package/generated") / api_name
+              resources_dir = out_dir / "src" / "main" / "resources"
+              resources_dir.mkdir(parents=True, exist_ok=True)
+
+              shutil.copy2(spec_path, resources_dir / "openapi.yml")
+
+              pom_content = renderer.render(
+                  template,
+                  {
+                      "groupId": group_id,
+                      "artifactId": api_name,
+                      "version": final_version,
+                  },
+              )
+              (out_dir / "pom.xml").write_text(pom_content, encoding="utf-8")
+
+              print(f"Generated POM for {api_name} with version {final_version}")
+              print((out_dir / "pom.xml").read_text(encoding="utf-8"))
+
+              subprocess.run(
+                  [
+                      "mvn",
+                      "-DskipTests",
+                      "-DaltDeploymentRepository=github::default::https://maven.pkg.github.com/alberto-gonzalez-es/api-demo",
+                      "deploy",
+                  ],
+                  cwd=str(out_dir),
+                  check=True,
+              )
+          PY
