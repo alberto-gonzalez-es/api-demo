@@ -21,7 +21,7 @@ paths:
                     example: ok
   /items:
     get:
-      summary: Item list
+      summary: List items
       responses:
         '200':
           description: Items list
