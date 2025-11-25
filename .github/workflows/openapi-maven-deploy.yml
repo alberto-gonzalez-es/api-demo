@@ -195,7 +195,7 @@ jobs:
                   [
                       "mvn",
                       "-DskipTests",
-                      "-DaltDeploymentRepository=github::default::https://maven.pkg.github.com/alberto-gonzalez-es/api-demo",
+                      "-DaltDeploymentRepository=github::https://maven.pkg.github.com/alberto-gonzalez-es/api-demo",
                       "deploy",
                   ],
                   cwd=str(out_dir),
