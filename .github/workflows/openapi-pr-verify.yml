@@ -107,8 +107,8 @@ jobs:
 
           echo "Specs JSON: ${SPECS_JSON}"
 
-          echo "${SPECS_JSON}" | jq -r '.[]' | while read -r spec; do
+          while read -r spec; do
             echo "Validating ${spec}..."
             java -jar openapi-generator-cli.jar validate -i "${spec}"
             echo "✅ ${spec} is a valid OpenAPI definition"
-          done
+          done < <(echo "${SPECS_JSON}" | jq -r '.[]')
