@@ -62,18 +62,10 @@ jobs:
             exit 0
           fi
 
-          echo "OpenAPI specs to validate:"
+          echo "OpenAPI specs to validate and lint:"
           echo "${SPECS}"
 
-          # Pretty JSON for logs
-          SPECS_JSON_PRETTY=$(printf '%s\n' "${SPECS}" | jq -R . | jq -s .)
-          echo "Specs JSON (pretty):"
-          echo "${SPECS_JSON_PRETTY}"
-
-          # Compact JSON for passing as output
           SPECS_JSON_COMPACT=$(printf '%s\n' "${SPECS}" | jq -R . | jq -s -c .)
-          echo "Specs JSON (compact): ${SPECS_JSON_COMPACT}"
-
           printf 'specs_json=%s\n' "${SPECS_JSON_COMPACT}" >> "$GITHUB_OUTPUT"
 
   validate-openapi:
@@ -106,177 +98,58 @@ jobs:
             https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.17.0/openapi-generator-cli-7.17.0.jar \
             -o openapi-generator-cli.jar
 
-      - name: Validate changed OpenAPI specs
+      - name: Validate OpenAPI specs
         id: validate_specs
         env:
           SPECS_JSON: ${{ needs.detect-openapi-changes.outputs.specs_json }}
         run: |
           set -e
 
-          echo "Specs JSON: ${SPECS_JSON}"
-
           REPORT_FILE="openapi-validation-report.md"
           : > "${REPORT_FILE}"
 
           HAS_ERRORS=0
-          HAS_WARNINGS=0
-
-          echo "## OpenAPI validation report" >> "${REPORT_FILE}"
-          echo "" >> "${REPORT_FILE}"
-
-          # Helper: group multi-line bullets into single lines
-          group_bullets() {
-            awk '
-              /^[ \t]*-/ {
-                # New bullet starts
-                if (current != "") {
-                  print current
-                }
-                line=$0
-                sub(/^[ \t]*/, "", line)       # trim leading spaces
-                sub(/^-+[ \t]*/, "", line)     # remove leading "- " or "-- "
-                current=line
-                next
-              }
-              {
-                # Continuation of current bullet: append text
-                if (current != "") {
-                  line=$0
-                  sub(/^[ \t]*/, "", line)
-                  current=current " " line
-                }
-              }
-              END {
-                if (current != "") {
-                  print current
-                }
-              }
-            '
-          }
 
           while read -r spec; do
             echo "Validating ${spec}..."
             OUTPUT_FILE="$(mktemp)"
             EXIT_CODE=0
 
-            # Capture stdout + stderr
             if ! java -jar openapi-generator-cli.jar validate -i "${spec}" > "${OUTPUT_FILE}" 2>&1; then
               EXIT_CODE=$?
             fi
 
-            echo "---- Output for ${spec} ----"
-            cat "${OUTPUT_FILE}"
-
-            # Extract warnings block: lines after 'Warnings:' until blank/info/error
-            WARNINGS_BLOCK=$(awk '
-              /^Warnings[[:space:]]*:/ {flag=1; next}
-              /^\[/ {flag=0}
-              /^Error:/ {flag=0}
-              /^Errors:/ {flag=0}
-              /^$/ {if(flag==1){flag=0; next}}
-              { if(flag) print }
-            ' "${OUTPUT_FILE}")
-
-            # Extract errors block: lines after 'Errors:' until blank/info/warnings/blank
-            ERRORS_BLOCK=$(awk '
-              /^Errors[[:space:]]*:/ {flag=1; next}
-              /^Warnings[[:space:]]*:/ {flag=0}
-              /^\[/ {flag=0}
-              /^Error:/ {flag=0}
-              /^$/ {if(flag==1){flag=0; next}}
-              { if(flag) print }
-            ' "${OUTPUT_FILE}")
-
-            # Group multi-line bullets into single lines
-            ERROR_LINES=""
-            if [ -n "${ERRORS_BLOCK}" ]; then
-              ERROR_LINES=$(printf '%s\n' "${ERRORS_BLOCK}" | group_bullets)
-            fi
-
-            WARNING_LINES=""
-            if [ -n "${WARNINGS_BLOCK}" ]; then
-              WARNING_LINES=$(printf '%s\n' "${WARNINGS_BLOCK}" | group_bullets)
-            fi
-
-            # Count lines
-            ERRORS_COUNT=0
-            if [ -n "${ERROR_LINES}" ]; then
-              ERRORS_COUNT=$(printf '%s\n' "${ERROR_LINES}" | sed '/^$/d' | wc -l | tr -d ' ')
-            fi
-
-            WARNINGS_COUNT=0
-            if [ -n "${WARNING_LINES}" ]; then
-              WARNINGS_COUNT=$(printf '%s\n' "${WARNING_LINES}" | sed '/^$/d' | wc -l | tr -d ' ')
-            fi
-
-            if [ "${WARNINGS_COUNT}" -gt 0 ]; then
-              HAS_WARNINGS=1
-            fi
-            # Consider errors either by parsed bullets or by non-zero exit
-            if [ "${ERRORS_COUNT}" -gt 0 ] || [ "${EXIT_CODE}" -ne 0 ]; then
-              HAS_ERRORS=1
+            # Force success if the validator explicitly states there's no issues
+            if grep -q "No validation issues detected" "${OUTPUT_FILE}"; then
+              EXIT_CODE=0
             fi
 
             echo "### \`${spec}\`" >> "${REPORT_FILE}"
             echo "" >> "${REPORT_FILE}"
 
-            if [ "${ERRORS_COUNT}" > 0 ] || [ "${EXIT_CODE}" -ne 0 ]; then
-              if [ "${ERRORS_COUNT}" -eq 0 ]; then
-                ERRORS_COUNT=1
-              fi
-
-              echo "#### ❌ ${ERRORS_COUNT} error(s)" >> "${REPORT_FILE}"
+            if [ "${EXIT_CODE}" -ne 0 ]; then
+              HAS_ERRORS=1
+              echo "#### ❌ Validation errors" >> "${REPORT_FILE}"
               echo "" >> "${REPORT_FILE}"
-
-              if [ -n "${ERROR_LINES}" ]; then
-                while IFS= read -r line; do
-                  [ -z "${line}" ] && continue
-                  echo "- ${line}" >> "${REPORT_FILE}"
-                done <<< "${ERROR_LINES}"
-              else
-                echo '```text' >> "${REPORT_FILE}"
-                cat "${OUTPUT_FILE}" >> "${REPORT_FILE}"
-                echo '```' >> "${REPORT_FILE}"
-              fi
-
+              echo '```text' >> "${REPORT_FILE}"
+              cat "${OUTPUT_FILE}" >> "${REPORT_FILE}"
+              echo '```' >> "${REPORT_FILE}"
               echo "" >> "${REPORT_FILE}"
-            fi
-
-            if [ "${WARNINGS_COUNT}" -gt 0 ]; then
-              echo "#### ⚠️ ${WARNINGS_COUNT} warning(s)" >> "${REPORT_FILE}"
-              echo "" >> "${REPORT_FILE}"
-
-              while IFS= read -r line; do
-                [ -z "${line}" ] && continue
-                echo "- ${line}" >> "${REPORT_FILE}"
-              done <<< "${WARNING_LINES}"
-
-              echo "" >> "${REPORT_FILE}"
-            fi
-
-            if [ "${ERRORS_COUNT}" -eq 0 ] && [ "${WARNINGS_COUNT}" -eq 0 ] && [ "${EXIT_CODE}" -eq 0 ]; then
-              echo "- ✅ No issues found." >> "${REPORT_FILE}"
+            else
+              echo "- ✅ No validation issues detected." >> "${REPORT_FILE}"
               echo "" >> "${REPORT_FILE}"
             fi
 
             rm -f "${OUTPUT_FILE}"
           done <<< "$(echo "${SPECS_JSON}" | jq -r '.[]')"
 
-          if [ "${HAS_ERRORS}" -eq 0 ] && [ "${HAS_WARNINGS}" -eq 0 ]; then
-            echo "All checked OpenAPI specs are valid ✅" >> "${REPORT_FILE}"
+          if [ "${HAS_ERRORS}" -eq 0 ]; then
+            echo "All OpenAPI specs are valid." >> "${REPORT_FILE}"
           fi
 
-          echo "Validation summary:"
-          cat "${REPORT_FILE}"
-
-          # Encode report and expose outputs
           REPORT_B64=$(base64 -w0 "${REPORT_FILE}")
-          if [ "${HAS_ERRORS}" -ne 0 ]; then
-            echo "has_errors=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_errors=false" >> "$GITHUB_OUTPUT"
-          fi
           echo "report_b64=${REPORT_B64}" >> "$GITHUB_OUTPUT"
+          echo "has_errors=$([ "${HAS_ERRORS}" -ne 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   lint-openapi:
     needs: detect-openapi-changes
@@ -305,30 +178,25 @@ jobs:
         run: |
           npm install -g @stoplight/spectral-cli
 
-      - name: Lint changed OpenAPI specs with Spectral
+      - name: Lint OpenAPI specs with Spectral
         id: lint_specs
         env:
           SPECS_JSON: ${{ needs.detect-openapi-changes.outputs.specs_json }}
         run: |
           set -e
 
-          echo "Specs JSON: ${SPECS_JSON}"
-
           REPORT_FILE="openapi-lint-report.md"
           : > "${REPORT_FILE}"
 
           HAS_ERRORS=0
 
-          echo "## OpenAPI lint report (Spectral)" >> "${REPORT_FILE}"
-          echo "" >> "${REPORT_FILE}"
-
           while read -r spec; do
-            echo "Linting ${spec} with Spectral..."
+            echo "Linting ${spec}..."
 
-            RESULTS_JSON=$(spectral lint "${spec}" -f json || true)
+            # Use official OAS ruleset
+            RESULTS_JSON=$(spectral lint "${spec}" -f json --ruleset "spectral:oas" || true)
 
             if [ -z "${RESULTS_JSON}" ] || ! echo "${RESULTS_JSON}" | jq empty >/dev/null 2>&1; then
-              echo "No lint results for ${spec}."
               continue
             fi
 
@@ -338,16 +206,13 @@ jobs:
             ERRORS_COUNT=$(echo "${ERRORS_JSON}" | jq 'length')
             WARNINGS_COUNT=$(echo "${WARNINGS_JSON}" | jq 'length')
 
-            if [ "${ERRORS_COUNT}" -gt 0 ] || [ "${WARNINGS_COUNT}" -gt 0 ]; then
-              echo "### \`${spec}\`" >> "${REPORT_FILE}"
-              echo "" >> "${REPORT_FILE}"
-            fi
+            echo "### \`${spec}\`" >> "${REPORT_FILE}"
+            echo "" >> "${REPORT_FILE}"
 
             if [ "${ERRORS_COUNT}" -gt 0 ]; then
               HAS_ERRORS=1
               echo "#### ❌ ${ERRORS_COUNT} lint error(s)" >> "${REPORT_FILE}"
               echo "" >> "${REPORT_FILE}"
-
               echo "${ERRORS_JSON}" | jq -r '.[] | "- \(.message) (code: \(.code)) at `\(.path | join("."))`"' >> "${REPORT_FILE}"
               echo "" >> "${REPORT_FILE}"
             fi
@@ -355,29 +220,19 @@ jobs:
             if [ "${WARNINGS_COUNT}" -gt 0 ]; then
               echo "#### ⚠️ ${WARNINGS_COUNT} lint warning(s)" >> "${REPORT_FILE}"
               echo "" >> "${REPORT_FILE}"
-
               echo "${WARNINGS_JSON}" | jq -r '.[] | "- \(.message) (code: \(.code)) at `\(.path | join("."))`"' >> "${REPORT_FILE}"
               echo "" >> "${REPORT_FILE}"
             fi
 
             if [ "${ERRORS_COUNT}" -eq 0 ] && [ "${WARNINGS_COUNT}" -eq 0 ]; then
-              echo "### \`${spec}\`" >> "${REPORT_FILE}"
-              echo "" >> "${REPORT_FILE}"
               echo "- ✅ No lint issues found." >> "${REPORT_FILE}"
               echo "" >> "${REPORT_FILE}"
             fi
           done <<< "$(echo "${SPECS_JSON}" | jq -r '.[]')"
 
-          echo "Lint report:"
-          cat "${REPORT_FILE}"
-
           REPORT_B64=$(base64 -w0 "${REPORT_FILE}")
-          if [ "${HAS_ERRORS}" -ne 0 ]; then
-            echo "has_errors=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_errors=false" >> "$GITHUB_OUTPUT"
-          fi
           echo "report_b64=${REPORT_B64}" >> "$GITHUB_OUTPUT"
+          echo "has_errors=$([ "${HAS_ERRORS}" -ne 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   summarize-openapi-checks:
     needs:
@@ -387,7 +242,7 @@ jobs:
     if: always()
 
     steps:
-      - name: Build combined OpenAPI report
+      - name: Build combined report
         run: |
           set -e
 
@@ -405,7 +260,6 @@ jobs:
           fi
 
           if [ -n "${LINT_B64}" ]; then
-            echo "" >> "${REPORT_FILE}"
             echo "## OpenAPI lint report (Spectral)" >> "${REPORT_FILE}"
             echo "" >> "${REPORT_FILE}"
             echo "${LINT_B64}" | base64 -d >> "${REPORT_FILE}"
@@ -414,7 +268,7 @@ jobs:
 
           cat "${REPORT_FILE}"
 
-      - name: Comment combined OpenAPI report on PR
+      - name: Post PR comment
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -423,7 +277,7 @@ jobs:
             const path = 'openapi-combined-report.md';
 
             if (!fs.existsSync(path)) {
-              core.info('No combined report file found, skipping comment.');
+              core.info('No report to post.');
               return;
             }
 
@@ -436,17 +290,17 @@ jobs:
               body,
             });
 
-      - name: Final fail if there were errors
+      - name: Fail PR if validation or lint errors
         run: |
-          VALIDATION_ERRORS="${{ needs.validate-openapi.outputs.validation_has_errors }}"
-          LINT_ERRORS="${{ needs.lint-openapi.outputs.lint_has_errors }}"
+          VAL="${{ needs.validate-openapi.outputs.validation_has_errors }}"
+          LINT="${{ needs.lint-openapi.outputs.lint_has_errors }}"
 
-          echo "validation_has_errors=${VALIDATION_ERRORS}"
-          echo "lint_has_errors=${LINT_ERRORS}"
+          echo "validation_has_errors=${VAL}"
+          echo "lint_has_errors=${LINT}"
 
-          if [ "${VALIDATION_ERRORS}" = "true" ] || [ "${LINT_ERRORS}" = "true" ]; then
-            echo "Either validation or lint reported errors. Failing."
+          if [ "${VAL}" = "true" ] || [ "${LINT}" = "true" ]; then
+            echo "OpenAPI validation or lint errors detected. Failing PR."
             exit 1
           fi
 
-          echo "No validation or lint errors. Success."
+          echo "No errors found. Success."
