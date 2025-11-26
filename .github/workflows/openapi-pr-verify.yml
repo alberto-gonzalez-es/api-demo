@@ -102,7 +102,6 @@ jobs:
             https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.17.0/openapi-generator-cli-7.17.0.jar \
             -o openapi-generator-cli.jar
 
-      # Ejecutamos la validación, construimos el informe, pero no detenemos el job aún
       - name: Validate changed OpenAPI specs
         id: validate_specs
         env:
@@ -127,7 +126,7 @@ jobs:
             OUTPUT_FILE="$(mktemp)"
             EXIT_CODE=0
 
-            # Capturamos stdout+stderr
+            # Capture stdout + stderr
             if ! java -jar openapi-generator-cli.jar validate -i "${spec}" > "${OUTPUT_FILE}" 2>&1; then
               EXIT_CODE=$?
             fi
@@ -135,33 +134,34 @@ jobs:
             echo "---- Output for ${spec} ----"
             cat "${OUTPUT_FILE}"
 
-            WARNINGS=$(grep -iE 'warn' "${OUTPUT_FILE}" || true)
+            # Detect warnings & errors from text (independent of exit code)
+            WARNINGS=$(grep -i 'warn' "${OUTPUT_FILE}" || true)
+            ERRORS_FROM_TEXT=$(grep -iE '^Errors:|^Error:|\[error\]' "${OUTPUT_FILE}" || true)
 
             if [ -n "${WARNINGS}" ]; then
               HAS_WARNINGS=1
             fi
-            if [ "${EXIT_CODE}" -ne 0 ]; then
+            if [ "${EXIT_CODE}" -ne 0 ] || [ -n "${ERRORS_FROM_TEXT}" ]; then
               HAS_ERRORS=1
             fi
 
             echo "### \`${spec}\`" >> "${REPORT_FILE}"
 
-            if [ -z "${WARNINGS}" ] && [ "${EXIT_CODE}" -eq 0 ]; then
-              echo "- ✅ No issues found." >> "${REPORT_FILE}"
+            if [ "${EXIT_CODE}" -ne 0 ] || [ -n "${ERRORS_FROM_TEXT}" ]; then
+              # ❌ There are errors – put full output so you see the bullet list etc.
+              echo "- ❌ Errors (validation failed):" >> "${REPORT_FILE}"
+              echo '```text' >> "${REPORT_FILE}"
+              cat "${OUTPUT_FILE}" >> "${REPORT_FILE}"
+              echo '```' >> "${REPORT_FILE}"
+            elif [ -n "${WARNINGS}" ]; then
+              # ⚠️ Only warnings, spec is still valid
+              echo "- ⚠️ Warnings (spec is valid but has issues):" >> "${REPORT_FILE}"
+              echo '```text' >> "${REPORT_FILE}"
+              echo "${WARNINGS}" >> "${REPORT_FILE}"
+              echo '```' >> "${REPORT_FILE}"
             else
-              if [ -n "${WARNINGS}" ]; then
-                echo "- ⚠️ Warnings:" >> "${REPORT_FILE}"
-                echo '```text' >> "${REPORT_FILE}"
-                echo "${WARNINGS}" >> "${REPORT_FILE}"
-                echo '```' >> "${REPORT_FILE}"
-              fi
-              if [ "${EXIT_CODE}" -ne 0 ]; then
-                echo "- ❌ Errors (validation failed):" >> "${REPORT_FILE}"
-                echo '```text' >> "${REPORT_FILE}"
-                # Aquí metemos TODO el output, incluyendo la lista de errores
-                cat "${OUTPUT_FILE}" >> "${REPORT_FILE}"
-                echo '```' >> "${REPORT_FILE}"
-              fi
+              # ✅ No warnings, no errors
+              echo "- ✅ No issues found." >> "${REPORT_FILE}"
             fi
 
             echo "" >> "${REPORT_FILE}"
@@ -178,8 +178,7 @@ jobs:
 
           if [ "${HAS_ERRORS}" -ne 0 ]; then
             echo "has_errors=true" >> "$GITHUB_OUTPUT"
-            # salimos con error para que la acción se marque como fallo,
-            # pero gracias a continue-on-error el job sigue y puede comentar la PR
+            # Mark this step as failed (but job continues due to continue-on-error)
             exit 1
           else
             echo "has_errors=false" >> "$GITHUB_OUTPUT"
