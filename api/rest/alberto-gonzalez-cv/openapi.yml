@@ -17,8 +17,6 @@ servers:
     description: CV API Server
 
 tags:
-  - name: Person
-    description: Personal information endpoints
   - name: Skills
     description: Skills and competencies
   - name: Experience
@@ -39,38 +37,6 @@ tags:
     description: Professional references
 
 paths:
-  /person/personal-info:
-    get:
-      operationId: getPersonalInfo
-      summary: Get personal information
-      description: Basic information about the CV owner.
-      tags:
-        - Person
-      responses:
-        '200':
-          description: Personal information
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Person'
-
-  /person/{id}:
-    get:
-        operationId: getPersonById
-        summary: Get person by id
-        description: Retrieve detailed person information by unique identifier.
-        tags:
-          - Person
-        parameters:
-          - $ref: '#/components/parameters/by_id'
-        responses:
-          '200':
-            description: Person
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Person'
-
   /skills:
     get:
       operationId: getSkills
@@ -476,30 +442,6 @@ components:
         total_pages:
           type: integer
           example: 7
-
-    Person:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        firstSurname:
-          type: string
-        secondSurname:
-          type: string
-        alias:
-          type: string
-        role:
-          type: string
-        age:
-          type: integer
-        profilePhotoUrl:
-          type: string
-        contactInfoId:
-          type: string
-          format: uuid
 
     Skill:
       type: object
