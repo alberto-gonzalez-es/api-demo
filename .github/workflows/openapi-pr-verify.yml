@@ -81,6 +81,10 @@ jobs:
     if: needs.detect-openapi-changes.outputs.specs_json != '' && needs.detect-openapi-changes.outputs.specs_json != '[]'
     runs-on: ubuntu-latest
 
+    outputs:
+      validation_has_errors: ${{ steps.validate_specs.outputs.has_errors }}
+      validation_report_b64: ${{ steps.validate_specs.outputs.report_b64 }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -106,7 +110,6 @@ jobs:
         id: validate_specs
         env:
           SPECS_JSON: ${{ needs.detect-openapi-changes.outputs.specs_json }}
-        continue-on-error: true
         run: |
           set -e
 
@@ -217,7 +220,7 @@ jobs:
             echo "### \`${spec}\`" >> "${REPORT_FILE}"
             echo "" >> "${REPORT_FILE}"
 
-            if [ "${ERRORS_COUNT}" -gt 0 ] || [ "${EXIT_CODE}" -ne 0 ]; then
+            if [ "${ERRORS_COUNT}" > 0 ] || [ "${EXIT_CODE}" -ne 0 ]; then
               if [ "${ERRORS_COUNT}" -eq 0 ]; then
                 ERRORS_COUNT=1
               fi
@@ -257,7 +260,7 @@ jobs:
             fi
 
             rm -f "${OUTPUT_FILE}"
-          done < <(echo "${SPECS_JSON}" | jq -r '.[]')
+          done <<< "$(echo "${SPECS_JSON}" | jq -r '.[]')"
 
           if [ "${HAS_ERRORS}" -eq 0 ] && [ "${HAS_WARNINGS}" -eq 0 ]; then
             echo "All checked OpenAPI specs are valid ✅" >> "${REPORT_FILE}"
@@ -266,45 +269,23 @@ jobs:
           echo "Validation summary:"
           cat "${REPORT_FILE}"
 
+          # Encode report and expose outputs
+          REPORT_B64=$(base64 -w0 "${REPORT_FILE}")
           if [ "${HAS_ERRORS}" -ne 0 ]; then
             echo "has_errors=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_errors=false" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Comment OpenAPI validation report on PR
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            const path = 'openapi-validation-report.md';
-
-            if (!fs.existsSync(path)) {
-              core.info('No validation report file found, skipping comment.');
-              return;
-            }
-
-            const body = fs.readFileSync(path, 'utf8');
-            const prNumber = context.payload.pull_request.number;
-
-            await github.rest.issues.createComment({
-              ...context.repo,
-              issue_number: prNumber,
-              body,
-            });
-
-      - name: Fail if validation had errors
-        if: steps.validate_specs.outputs.has_errors == 'true'
-        run: |
-          echo "OpenAPI validation found errors."
-          exit 1
+          echo "report_b64=${REPORT_B64}" >> "$GITHUB_OUTPUT"
 
   lint-openapi:
     needs: detect-openapi-changes
     if: needs.detect-openapi-changes.outputs.specs_json != '' && needs.detect-openapi-changes.outputs.specs_json != '[]'
     runs-on: ubuntu-latest
+
+    outputs:
+      lint_has_errors: ${{ steps.lint_specs.outputs.has_errors }}
+      lint_report_b64: ${{ steps.lint_specs.outputs.report_b64 }}
 
     steps:
       - name: Checkout repository
@@ -325,6 +306,7 @@ jobs:
           npm install -g @stoplight/spectral-cli
 
       - name: Lint changed OpenAPI specs with Spectral
+        id: lint_specs
         env:
           SPECS_JSON: ${{ needs.detect-openapi-changes.outputs.specs_json }}
         run: |
@@ -332,25 +314,139 @@ jobs:
 
           echo "Specs JSON: ${SPECS_JSON}"
 
-          # If you have a custom ruleset, Spectral will pick up .spectral.yaml by default.
-          # We configure it to fail only on 'error' level findings.
-          has_errors=0
+          REPORT_FILE="openapi-lint-report.md"
+          : > "${REPORT_FILE}"
 
-          echo "Linting OpenAPI specs with Spectral..."
-          echo ""
+          HAS_ERRORS=0
 
-          echo "${SPECS_JSON}" | jq -r '.[]' | while read -r spec; do
-            echo "spectral lint ${spec}"
-            if ! spectral lint "${spec}" --fail-severity=error; then
-              echo "Lint errors found in ${spec}"
-              has_errors=1
+          echo "## OpenAPI lint report (Spectral)" >> "${REPORT_FILE}"
+          echo "" >> "${REPORT_FILE}"
+
+          while read -r spec; do
+            echo "Linting ${spec} with Spectral..."
+
+            RESULTS_JSON=$(spectral lint "${spec}" -f json || true)
+
+            if [ -z "${RESULTS_JSON}" ] || ! echo "${RESULTS_JSON}" | jq empty >/dev/null 2>&1; then
+              echo "No lint results for ${spec}."
+              continue
             fi
-            echo ""
-          done
 
-          if [ "${has_errors}" -ne 0 ]; then
-            echo "OpenAPI linting found errors."
-            exit 1
+            ERRORS_JSON=$(echo "${RESULTS_JSON}" | jq '[.[] | select(.severity == 0)]')
+            WARNINGS_JSON=$(echo "${RESULTS_JSON}" | jq '[.[] | select(.severity == 1)]')
+
+            ERRORS_COUNT=$(echo "${ERRORS_JSON}" | jq 'length')
+            WARNINGS_COUNT=$(echo "${WARNINGS_JSON}" | jq 'length')
+
+            if [ "${ERRORS_COUNT}" -gt 0 ] || [ "${WARNINGS_COUNT}" -gt 0 ]; then
+              echo "### \`${spec}\`" >> "${REPORT_FILE}"
+              echo "" >> "${REPORT_FILE}"
+            fi
+
+            if [ "${ERRORS_COUNT}" -gt 0 ]; then
+              HAS_ERRORS=1
+              echo "#### ❌ ${ERRORS_COUNT} lint error(s)" >> "${REPORT_FILE}"
+              echo "" >> "${REPORT_FILE}"
+
+              echo "${ERRORS_JSON}" | jq -r '.[] | "- \(.message) (code: \(.code)) at `\(.path | join("."))`"' >> "${REPORT_FILE}"
+              echo "" >> "${REPORT_FILE}"
+            fi
+
+            if [ "${WARNINGS_COUNT}" -gt 0 ]; then
+              echo "#### ⚠️ ${WARNINGS_COUNT} lint warning(s)" >> "${REPORT_FILE}"
+              echo "" >> "${REPORT_FILE}"
+
+              echo "${WARNINGS_JSON}" | jq -r '.[] | "- \(.message) (code: \(.code)) at `\(.path | join("."))`"' >> "${REPORT_FILE}"
+              echo "" >> "${REPORT_FILE}"
+            fi
+
+            if [ "${ERRORS_COUNT}" -eq 0 ] && [ "${WARNINGS_COUNT}" -eq 0 ]; then
+              echo "### \`${spec}\`" >> "${REPORT_FILE}"
+              echo "" >> "${REPORT_FILE}"
+              echo "- ✅ No lint issues found." >> "${REPORT_FILE}"
+              echo "" >> "${REPORT_FILE}"
+            fi
+          done <<< "$(echo "${SPECS_JSON}" | jq -r '.[]')"
+
+          echo "Lint report:"
+          cat "${REPORT_FILE}"
+
+          REPORT_B64=$(base64 -w0 "${REPORT_FILE}")
+          if [ "${HAS_ERRORS}" -ne 0 ]; then
+            echo "has_errors=true" >> "$GITHUB_OUTPUT"
           else
-            echo "OpenAPI linting passed with no errors."
+            echo "has_errors=false" >> "$GITHUB_OUTPUT"
           fi
+          echo "report_b64=${REPORT_B64}" >> "$GITHUB_OUTPUT"
+
+  summarize-openapi-checks:
+    needs:
+      - validate-openapi
+      - lint-openapi
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Build combined OpenAPI report
+        run: |
+          set -e
+
+          VALIDATION_B64="${{ needs.validate-openapi.outputs.validation_report_b64 }}"
+          LINT_B64="${{ needs.lint-openapi.outputs.lint_report_b64 }}"
+
+          REPORT_FILE="openapi-combined-report.md"
+          : > "${REPORT_FILE}"
+
+          if [ -n "${VALIDATION_B64}" ]; then
+            echo "## OpenAPI validation report" >> "${REPORT_FILE}"
+            echo "" >> "${REPORT_FILE}"
+            echo "${VALIDATION_B64}" | base64 -d >> "${REPORT_FILE}"
+            echo "" >> "${REPORT_FILE}"
+          fi
+
+          if [ -n "${LINT_B64}" ]; then
+            echo "" >> "${REPORT_FILE}"
+            echo "## OpenAPI lint report (Spectral)" >> "${REPORT_FILE}"
+            echo "" >> "${REPORT_FILE}"
+            echo "${LINT_B64}" | base64 -d >> "${REPORT_FILE}"
+            echo "" >> "${REPORT_FILE}"
+          fi
+
+          cat "${REPORT_FILE}"
+
+      - name: Comment combined OpenAPI report on PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = 'openapi-combined-report.md';
+
+            if (!fs.existsSync(path)) {
+              core.info('No combined report file found, skipping comment.');
+              return;
+            }
+
+            const body = fs.readFileSync(path, 'utf8');
+            const prNumber = context.payload.pull_request.number;
+
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: prNumber,
+              body,
+            });
+
+      - name: Final fail if there were errors
+        run: |
+          VALIDATION_ERRORS="${{ needs.validate-openapi.outputs.validation_has_errors }}"
+          LINT_ERRORS="${{ needs.lint-openapi.outputs.lint_has_errors }}"
+
+          echo "validation_has_errors=${VALIDATION_ERRORS}"
+          echo "lint_has_errors=${LINT_ERRORS}"
+
+          if [ "${VALIDATION_ERRORS}" = "true" ] || [ "${LINT_ERRORS}" = "true" ]; then
+            echo "Either validation or lint reported errors. Failing."
+            exit 1
+          fi
+
+          echo "No validation or lint errors. Success."
