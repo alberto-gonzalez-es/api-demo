@@ -178,6 +178,13 @@ jobs:
         run: |
           npm install -g @stoplight/spectral-cli
 
+      - name: Download Spectral OAS ruleset
+        run: |
+          # Download the official OpenAPI (OAS) ruleset
+          curl -L https://unpkg.com/@stoplight/spectral-oas@latest/ruleset.yaml -o .spectral-oas.yaml
+          ls -l .spectral-oas.yaml
+          head -n 5 .spectral-oas.yaml || true
+
       - name: Lint OpenAPI specs with Spectral
         id: lint_specs
         env:
@@ -185,18 +192,21 @@ jobs:
         run: |
           set -e
 
+          echo "Specs JSON: ${SPECS_JSON}"
+
           REPORT_FILE="openapi-lint-report.md"
           : > "${REPORT_FILE}"
 
           HAS_ERRORS=0
 
           while read -r spec; do
-            echo "Linting ${spec}..."
+            echo "Linting ${spec} with Spectral..."
 
-            # Use official OAS ruleset
-            RESULTS_JSON=$(spectral lint "${spec}" -f json --ruleset "spectral:oas" || true)
+            # Use the downloaded OAS ruleset file (avoids spectral:oas resolution issues)
+            RESULTS_JSON=$(spectral lint "${spec}" -f json -r .spectral-oas.yaml || true)
 
             if [ -z "${RESULTS_JSON}" ] || ! echo "${RESULTS_JSON}" | jq empty >/dev/null 2>&1; then
+              echo "No lint results for ${spec}."
               continue
             fi
 
@@ -230,9 +240,17 @@ jobs:
             fi
           done <<< "$(echo "${SPECS_JSON}" | jq -r '.[]')"
 
+          echo "Lint report:"
+          cat "${REPORT_FILE}"
+
           REPORT_B64=$(base64 -w0 "${REPORT_FILE}")
+          if [ "${HAS_ERRORS}" -ne 0 ]; then
+            echo "has_errors=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_errors=false" >> "$GITHUB_OUTPUT"
+          fi
           echo "report_b64=${REPORT_B64}" >> "$GITHUB_OUTPUT"
-          echo "has_errors=$([ "${HAS_ERRORS}" -ne 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
 
   summarize-openapi-checks:
     needs:
