@@ -90,6 +90,14 @@ jobs:
           curl -L \
             https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.17.0/openapi-generator-cli-7.17.0.jar \
             -o openapi-generator-cli.jar
+          curl -L \
+            https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.17.0/openapi-generator-cli-7.17.0.jar.sha256 \
+            -o openapi-generator-cli.jar.sha256
+          # Maven Central's .sha256 file contains only the hash, so we need to format it for sha256sum -c
+          HASH=$(cat openapi-generator-cli.jar.sha256)
+          echo "${HASH}  openapi-generator-cli.jar" > openapi-generator-cli.jar.sha256
+          sha256sum -c openapi-generator-cli.jar.sha256
+          rm openapi-generator-cli.jar.sha256
 
       - name: Validate changed OpenAPI specs
         env:
