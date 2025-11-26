@@ -40,21 +40,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Person'
 
-  /cv:
-    get:
-      operationId: getFullCV
-      summary: Get aggregated full CV
-      description: "Returns the full CV: person, experiences, education, projects, etc."
-      parameters:
-        - $ref: '#/components/parameters/query'
-      responses:
-        '200':
-          description: Full CV
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CVFull'
-
   /skills:
     get:
       operationId: getSkills
@@ -699,56 +684,6 @@ components:
           $ref: '#/components/schemas/ContactInfo'
         note:
           type: string
-
-    CVFull:
-      type: object
-      properties:
-        person:
-          $ref: '#/components/schemas/Person'
-        skills:
-          type: array
-          items:
-            $ref: '#/components/schemas/Skill'
-        experiences:
-          type: array
-          items:
-            $ref: '#/components/schemas/Experience'
-        education:
-          type: array
-          items:
-            $ref: '#/components/schemas/Education'
-        projects:
-          type: array
-          items:
-            $ref: '#/components/schemas/Project'
-        publications:
-          type: array
-          items:
-            $ref: '#/components/schemas/Publication'
-        certifications:
-          type: array
-          items:
-            $ref: '#/components/schemas/Certification'
-        languages:
-          type: array
-          items:
-            $ref: '#/components/schemas/Language'
-        contacts:
-          type: array
-          items:
-            $ref: '#/components/schemas/ContactInfo'
-        social:
-          type: array
-          items:
-            $ref: '#/components/schemas/SocialLink'
-        awards:
-          type: array
-          items:
-            $ref: '#/components/schemas/Award'
-        references:
-          type: array
-          items:
-            $ref: '#/components/schemas/Reference'
 
     PaginatedSkills:
       type: object
