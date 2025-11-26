@@ -43,7 +43,7 @@ paths:
   /skills:
     get:
       operationId: getSkills
-      summary: List skills            
+      summary: List skills    
       description: Get skills with filters, search, pagination and sorting.
       parameters:
         - $ref: '#/components/parameters/query'
