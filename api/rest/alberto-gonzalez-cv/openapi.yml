@@ -38,7 +38,7 @@ paths:
             content:
               application/json:
                 schema:
-                  $ref: '#/components/schemas/PersonFAKE'
+                  $ref: '#/components/schemas/Person'
 
   /skills:
     get:
