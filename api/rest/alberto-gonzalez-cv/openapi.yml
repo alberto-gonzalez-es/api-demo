@@ -1,7 +1,7 @@
 openapi: 3.0.4
 info:
   title: Curriculum Vitae API
-  version: "1.0.0"
+  version: "0.0.1"
   description: >-
     This is the OpenAPI specification for Alberto González's Curriculum Vitae (CV) API.
     It provides endpoints to access personal information, skills, work experiences,
@@ -28,32 +28,17 @@ paths:
 
   /person/{id}:
     get:
-      operationId: getPersonById
-      summary: Get person by id
-      parameters:
-        - $ref: '#/components/parameters/by_id'
-      responses:
-        '200':
-          description: Person
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Person'
-
-  /cv:
-    get:
-      operationId: getFullCV
-      summary: Get aggregated full CV
-      description: "Returns the full CV: person, experiences, education, projects, etc."
-      parameters:
-        - $ref: '#/components/parameters/query'
-      responses:
-        '200':
-          description: Full CV
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CVFull'
+        operationId: getPersonById
+        summary: Get person by id
+        parameters:
+          - $ref: '#/components/parameters/by_id'
+        responses:
+          '200':
+            description: Person
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Person'
 
   /skills:
     get:
@@ -426,14 +411,6 @@ components:
           type: integer
           example: 7
 
-    Error:
-      type: object
-      properties:
-        code:
-          type: integer
-        message:
-          type: string
-
     Person:
       type: object
       properties:
@@ -561,31 +538,6 @@ components:
           items:
             type: string
 
-    Publication:
-      type: object
-      properties:
-        id:
-          type: string
-        title:
-          type: string
-        venue:
-          type: string
-        date:
-          type: string
-          format: date
-        url:
-          type: string
-        authors:
-          type: array
-          items:
-            type: string
-        abstract:
-          type: string
-        tags:
-          type: array
-          items:
-            type: string
-
     Certification:
       type: object
       properties:
@@ -700,56 +652,6 @@ components:
         note:
           type: string
 
-    CVFull:
-      type: object
-      properties:
-        person:
-          $ref: '#/components/schemas/Person'
-        skills:
-          type: array
-          items:
-            $ref: '#/components/schemas/Skill'
-        experiences:
-          type: array
-          items:
-            $ref: '#/components/schemas/Experience'
-        education:
-          type: array
-          items:
-            $ref: '#/components/schemas/Education'
-        projects:
-          type: array
-          items:
-            $ref: '#/components/schemas/Project'
-        publications:
-          type: array
-          items:
-            $ref: '#/components/schemas/Publication'
-        certifications:
-          type: array
-          items:
-            $ref: '#/components/schemas/Certification'
-        languages:
-          type: array
-          items:
-            $ref: '#/components/schemas/Language'
-        contacts:
-          type: array
-          items:
-            $ref: '#/components/schemas/ContactInfo'
-        social:
-          type: array
-          items:
-            $ref: '#/components/schemas/SocialLink'
-        awards:
-          type: array
-          items:
-            $ref: '#/components/schemas/Award'
-        references:
-          type: array
-          items:
-            $ref: '#/components/schemas/Reference'
-
     PaginatedSkills:
       type: object
       properties:
@@ -787,16 +689,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Project'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-
-    PaginatedPublications:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Publication'
         meta:
           $ref: '#/components/schemas/PaginationMeta'
 
