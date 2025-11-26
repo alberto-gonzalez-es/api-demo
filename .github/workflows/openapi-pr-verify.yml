@@ -64,8 +64,8 @@ jobs:
           echo "OpenAPI specs to validate:"
           echo "${SPECS}"
 
-          # Convert the list to JSON array: ["path1","path2",...]
-          SPECS_JSON=$(printf '%s\n' "${SPECS}" | jq -R . | jq -s .)
+          # Convert the list to a compact JSON array: ["path1","path2",...]
+          SPECS_JSON=$(printf '%s\n' "${SPECS}" | jq -R . | jq -s -c .)
 
           echo "Specs JSON: ${SPECS_JSON}"
           echo "specs_json=${SPECS_JSON}" >> "$GITHUB_OUTPUT"
@@ -93,7 +93,6 @@ jobs:
           curl -L \
             https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.17.0/openapi-generator-cli-7.17.0.jar.sha256 \
             -o openapi-generator-cli.jar.sha256
-          # Maven Central's .sha256 file contains only the hash, so we need to format it for sha256sum -c
           HASH=$(cat openapi-generator-cli.jar.sha256)
           echo "${HASH}  openapi-generator-cli.jar" > openapi-generator-cli.jar.sha256
           sha256sum -c openapi-generator-cli.jar.sha256
