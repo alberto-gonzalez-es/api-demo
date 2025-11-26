@@ -16,6 +16,28 @@ servers:
   - url: https://api.alberto-gonzalez.es
     description: CV API Server
 
+tags:
+  - name: Person
+    description: Personal information endpoints
+  - name: Skills
+    description: Skills and competencies
+  - name: Experience
+    description: Work experience history
+  - name: Education
+    description: Academic background
+  - name: Projects
+    description: Personal and professional projects
+  - name: Certifications
+    description: Professional certifications
+  - name: Languages
+    description: Language proficiencies
+  - name: Contact
+    description: Contact information and social links
+  - name: Awards
+    description: Awards and recognitions
+  - name: References
+    description: Professional references
+
 paths:
   /person/personal-info:
     get:
