@@ -64,6 +64,7 @@ paths:
     get:
       operationId: getSkillById
       summary: Get skill by id
+      description: Retrieve detailed information about a specific skill.
       parameters:
         - $ref: '#/components/parameters/by_id'
       responses:
