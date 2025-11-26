@@ -134,37 +134,87 @@ jobs:
             echo "---- Output for ${spec} ----"
             cat "${OUTPUT_FILE}"
 
-            # Detect warnings & errors from text (independent of exit code)
-            WARNINGS=$(grep -i 'warn' "${OUTPUT_FILE}" || true)
-            ERRORS_FROM_TEXT=$(grep -iE '^Errors:|^Error:|\[error\]' "${OUTPUT_FILE}" || true)
+            # Extract warnings block: lines after 'Warnings:' until blank line or [info]/Error(s)
+            WARNINGS_BLOCK=$(awk '
+              /^Warnings[[:space:]]*:/ {flag=1; next}
+              /^\[/ {flag=0}
+              /^Error:/ {flag=0}
+              /^Errors:/ {flag=0}
+              /^$/ {if(flag==1){flag=0; next}}
+              { if(flag) print }
+            ' "${OUTPUT_FILE}")
 
-            if [ -n "${WARNINGS}" ]; then
+            # Extract errors block: lines after 'Errors:' until blank line or "Error:" summary or [info]
+            ERRORS_BLOCK=$(awk '
+              /^Errors[[:space:]]*:/ {flag=1; next}
+              /^\[/ {flag=0}
+              /^Error:/ {flag=0}
+              /^Warnings:/ {if(flag==0) next}
+              /^$/ {if(flag==1){flag=0; next}}
+              { if(flag) print }
+            ' "${OUTPUT_FILE}")
+
+            # Count bullet-style lines
+            WARNINGS_COUNT=0
+            if [ -n "${WARNINGS_BLOCK}" ]; then
+              WARNINGS_COUNT=$(printf '%s\n' "${WARNINGS_BLOCK}" | grep -E '^[[:space:]]*-' | wc -l | tr -d ' ')
+            fi
+
+            ERRORS_COUNT=0
+            if [ -n "${ERRORS_BLOCK}" ]; then
+              ERRORS_COUNT=$(printf '%s\n' "${ERRORS_BLOCK}" | grep -E '^[[:space:]]*-' | wc -l | tr -d ' ')
+            fi
+
+            if [ "${WARNINGS_COUNT}" -gt 0 ]; then
               HAS_WARNINGS=1
             fi
-            if [ "${EXIT_CODE}" -ne 0 ] || [ -n "${ERRORS_FROM_TEXT}" ]; then
+            # Consider errors either by block or by non-zero exit code
+            if [ "${ERRORS_COUNT}" -gt 0 ] || [ "${EXIT_CODE}" -ne 0 ]; then
               HAS_ERRORS=1
             fi
 
             echo "### \`${spec}\`" >> "${REPORT_FILE}"
 
-            if [ "${EXIT_CODE}" -ne 0 ] || [ -n "${ERRORS_FROM_TEXT}" ]; then
-              # ❌ There are errors – put full output so you see the bullet list etc.
-              echo "- ❌ Errors (validation failed):" >> "${REPORT_FILE}"
-              echo '```text' >> "${REPORT_FILE}"
-              cat "${OUTPUT_FILE}" >> "${REPORT_FILE}"
-              echo '```' >> "${REPORT_FILE}"
-            elif [ -n "${WARNINGS}" ]; then
-              # ⚠️ Only warnings, spec is still valid
-              echo "- ⚠️ Warnings (spec is valid but has issues):" >> "${REPORT_FILE}"
-              echo '```text' >> "${REPORT_FILE}"
-              echo "${WARNINGS}" >> "${REPORT_FILE}"
-              echo '```' >> "${REPORT_FILE}"
-            else
-              # ✅ No warnings, no errors
-              echo "- ✅ No issues found." >> "${REPORT_FILE}"
+            if [ "${ERRORS_COUNT}" -gt 0 ] || [ "${EXIT_CODE}" -ne 0 ]; then
+              # ❌ Errors present
+              if [ "${ERRORS_COUNT}" -eq 0 ]; then
+                # No parsed bullets, fallback to 1 generic error
+                ERRORS_COUNT=1
+              fi
+              echo "#### ❌ ${ERRORS_COUNT} error(s)" >> "${REPORT_FILE}"
+              echo "" >> "${REPORT_FILE}"
+
+              if [ -n "${ERRORS_BLOCK}" ]; then
+                # Normalize bullet lines
+                printf '%s\n' "${ERRORS_BLOCK}" \
+                  | grep -E '^[[:space:]]*-' \
+                  | sed -E 's/^[[:space:]]*-[[:space:]]*/- /' >> "${REPORT_FILE}"
+              else
+                # Fallback: dump full output if we couldn't parse the block
+                echo '```text' >> "${REPORT_FILE}"
+                cat "${OUTPUT_FILE}" >> "${REPORT_FILE}"
+                echo '```' >> "${REPORT_FILE}"
+              fi
+
+              echo "" >> "${REPORT_FILE}"
+
             fi
 
-            echo "" >> "${REPORT_FILE}"
+            if [ "${WARNINGS_COUNT}" -gt 0 ]; then
+              echo "#### ⚠️ ${WARNINGS_COUNT} warning(s)" >> "${REPORT_FILE}"
+              echo "" >> "${REPORT_FILE}"
+
+              printf '%s\n' "${WARNINGS_BLOCK}" \
+                | grep -E '^[[:space:]]*-' \
+                | sed -E 's/^[[:space:]]*-[[:space:]]*/- /' >> "${REPORT_FILE}"
+
+              echo "" >> "${REPORT_FILE}"
+            fi
+
+            if [ "${ERRORS_COUNT}" -eq 0 ] && [ "${WARNINGS_COUNT}" -eq 0 ] && [ "${EXIT_CODE}" -eq 0 ]; then
+              echo "- ✅ No issues found." >> "${REPORT_FILE}"
+              echo "" >> "${REPORT_FILE}"
+            fi
 
             rm -f "${OUTPUT_FILE}"
           done < <(echo "${SPECS_JSON}" | jq -r '.[]')
@@ -178,8 +228,6 @@ jobs:
 
           if [ "${HAS_ERRORS}" -ne 0 ]; then
             echo "has_errors=true" >> "$GITHUB_OUTPUT"
-            # Mark this step as failed (but job continues due to continue-on-error)
-            exit 1
           else
             echo "has_errors=false" >> "$GITHUB_OUTPUT"
           fi
