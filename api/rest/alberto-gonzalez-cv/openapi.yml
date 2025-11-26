@@ -4,6 +4,9 @@ info:
   version: "1.0.1"
   description: >-
     This is the OpenAPI specification for Alberto González's Curriculum Vitae (CV) API.
+    It provides endpoints to access personal information, skills, work experiences,
+    education, projects, publications, certifications, languages, contacts, social links,
+    awards, and references.
 
 servers:
   - url: https://api.alberto-gonzalez.es
@@ -23,26 +26,84 @@ paths:
               schema:
                 $ref: '#/components/schemas/Person'
 
+  /person/{id}:
+    get:
+      operationId: getPersonById
+      summary: Get person by id
+      parameters:
+        - $ref: '#/components/parameters/by_id'
+      responses:
+        '200':
+          description: Person
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+
   /skills:
     get:
       operationId: getSkills
       summary: List skills
+      description: Get skills with filters, search, pagination and sorting.
       parameters:
         - $ref: '#/components/parameters/query'
-        - $ref: '#/components/parameters/invalid_param'  # ERROR 1: Referencia a parámetro que no existe
+        - $ref: '#/components/parameters/tags'
+        - $ref: '#/components/parameters/level'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+        - $ref: '#/components/parameters/sort'
       responses:
         '200':
           description: Paginated list of skills
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NonExistentSchema'  # ERROR 2: Referencia a schema inexistente
+                $ref: '#/components/schemas/PaginatedSkills'
+
+  /skills/{id}:
+    get:
+      operationId: getSkillById
+      summary: Get skill by id
+      description: Retrieve detailed information about a specific skill.
+      parameters:
+        - $ref: '#/components/parameters/by_id'
+      responses:
+        '200':
+          description: Skill
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Skill'
+
+  /experience:
+    get:
+      operationId: getExperiences
+      summary: List work experiences
+      description: Filter by company, dates, location, tags, search, and pagination.
+      parameters:
+        - $ref: '#/components/parameters/query'
+        - $ref: '#/components/parameters/company'
+        - $ref: '#/components/parameters/start_year'
+        - $ref: '#/components/parameters/end_year'
+        - $ref: '#/components/parameters/location'
+        - $ref: '#/components/parameters/tags'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+        - $ref: '#/components/parameters/sort'
+      responses:
+        '200':
+          description: Paginated list of experiences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedExperiences'
 
   /experience/{id}:
     get:
       operationId: getExperienceById
       summary: Get experience by id
-      # ERROR 3: Falta el parámetro 'id' requerido en el path
+      parameters:
+        - $ref: '#/components/parameters/by_id'
       responses:
         '200':
           description: Experience
@@ -51,10 +112,66 @@ paths:
               schema:
                 $ref: '#/components/schemas/Experience'
 
+  /education:
+    get:
+      operationId: getEducation
+      summary: List education
+      description: Academic records with optional filters and pagination.
+      parameters:
+        - $ref: '#/components/parameters/query'
+        - $ref: '#/components/parameters/start_year'
+        - $ref: '#/components/parameters/end_year'
+        - $ref: '#/components/parameters/location'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+        - $ref: '#/components/parameters/sort'
+      responses:
+        '200':
+          description: Paginated list of education
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEducation'
+
+  /education/{id}:
+    get:
+      operationId: getEducationById
+      summary: Get education by id
+      parameters:
+        - $ref: '#/components/parameters/by_id'
+      responses:
+        '200':
+          description: Education
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Education'
+
+  /projects:
+    get:
+      operationId: getProjects
+      summary: List projects
+      description: Projects with filters, tags, date range, pagination and sorting.
+      parameters:
+        - $ref: '#/components/parameters/query'
+        - $ref: '#/components/parameters/tags'
+        - $ref: '#/components/parameters/start_year'
+        - $ref: '#/components/parameters/end_year'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+        - $ref: '#/components/parameters/sort'
+      responses:
+        '200':
+          description: Paginated list of projects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProjects'
+
   /projects/{id}:
-    post:  # ERROR 4: Operación POST sin requestBody definido
-      operationId: updateProject
-      summary: Update project
+    get:
+      operationId: getProjectById
+      summary: Get project by id
       parameters:
         - name: id
           in: path
@@ -63,18 +180,238 @@ paths:
             type: string
       responses:
         '200':
-          description: Updated project
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+
+  /certification:
+    get:
+      operationId: getCertifications
+      summary: List certifications
+      description: Certifications with optional filters and pagination.
+      parameters:
+        - $ref: '#/components/parameters/query'
+        - $ref: '#/components/parameters/start_year'
+        - $ref: '#/components/parameters/end_year'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+        - $ref: '#/components/parameters/sort'
+      responses:
+        '200':
+          description: Paginated list of certifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCertifications'
+
+  /certification/{id}:
+    get:
+      operationId: getCertificationById
+      summary: Get certification by id
+      parameters:
+        - $ref: '#/components/parameters/by_id'
+      responses:
+        '200':
+          description: Certification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Certification'
+
+  /languages:
+    get:
+      operationId: getLanguages
+      summary: List languages
+      description: Languages with optional filters such as proficiency and pagination.
+      parameters:
+        - $ref: '#/components/parameters/query'
+        - $ref: '#/components/parameters/language'
+        - $ref: '#/components/parameters/proficiency'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+      responses:
+        '200':
+          description: Paginated list of languages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLanguages'
+
+  /contact-info/{id}:
+    get:
+      operationId: getContactInfoById
+      summary: Get contact information by id
+      description: Retrieve contact information such as email and phone numbers.
+      parameters:
+        - $ref: '#/components/parameters/by_id'
+      responses:
+        '200':
+          description: Contacts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactInfo'
+
+  /contact-info/{id}/social:
+    get:
+      operationId: getSocialLinksByContactId
+      summary: Get social links by contact info id
+      description: Retrieve social media or professional profile links.
+      parameters:
+        - $ref: '#/components/parameters/by_id'
+      responses:
+        '200':
+          description: Social links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SocialLink'
+
+  /awards:
+    get:
+      operationId: getAwards
+      summary: List awards
+      description: Awards and recognitions with filters and pagination.
+      parameters:
+        - $ref: '#/components/parameters/query'
+        - $ref: '#/components/parameters/start_year'
+        - $ref: '#/components/parameters/end_year'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+      responses:
+        '200':
+          description: Paginated list of awards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAwards'
+
+  /references:
+    get:
+      operationId: getReferences
+      summary: List references
+      description: Professional references with pagination.
+      parameters:
+        - $ref: '#/components/parameters/query'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+      responses:
+        '200':
+          description: Paginated list of references
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedReferences'
 
 components:
   parameters:
+    by_id:
+      name: id
+      in: path
+      description: Unique identifier.
+      required: true
+      schema:
+        type: string
+        format: uuid
     query:
       name: query
       in: query
       description: Free text search term.
       schema:
-        type: invalid_type  # ERROR 5: Tipo de dato inválido (no existe 'invalid_type')
+        type: string
+    page:
+      name: page
+      in: query
+      description: Page number (1-based).
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    per_page:
+      name: per_page
+      in: query
+      description: Items per page.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 20
+    sort:
+      name: sort
+      in: query
+      description: Sort field, use prefix - for descending (e.g. start_date or -start_date).
+      schema:
+        type: string
+    tags:
+      name: tags
+      in: query
+      description: Filter by tags; multiple values separated by commas.
+      schema:
+        type: string
+    level:
+      name: level
+      in: query
+      description: Skill level or seniority (junior, mid, senior, expert).
+      schema:
+        type: string
+    company:
+      name: company
+      in: query
+      description: Filter by company.
+      schema:
+        type: string
+    start_year:
+      name: start_year
+      in: query
+      description: Start year (filter by year range).
+      schema:
+        type: integer
+    end_year:
+      name: end_year
+      in: query
+      description: End year (filter by year range).
+      schema:
+        type: integer
+    location:
+      name: location
+      in: query
+      description: Filter by location/city/country.
+      schema:
+        type: string
+    language:
+      name: language
+      in: query
+      description: Filter by language (ISO code or name).
+      schema:
+        type: string
+    proficiency:
+      name: proficiency
+      in: query
+      description: Proficiency level (A1-C2, beginner, intermediate, advanced).
+      schema:
+        type: string
 
   schemas:
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 125
+        page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 20
+        total_pages:
+          type: integer
+          example: 7
+
     Person:
       type: object
       properties:
@@ -83,3 +420,315 @@ components:
           format: uuid
         name:
           type: string
+        firstSurname:
+          type: string
+        secondSurname:
+          type: string
+        alias:
+          type: string
+        role:
+          type: string
+        age:
+          type: integer
+        profilePhotoUrl:
+          type: string
+        contactInfoId:
+          type: string
+          format: uuid
+
+    Skill:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        level:
+          type: string
+        years:
+          type: number
+        tags:
+          type: array
+          items:
+            type: string
+        endorsements:
+          type: integer
+
+    Experience:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        company:
+          type: string
+        location:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        description:
+          type: string
+        responsibilities:
+          type: array
+          items:
+            type: string
+        achievements:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    Education:
+      type: object
+      properties:
+        id:
+          type: string
+        institution:
+          type: string
+        degree:
+          type: string
+        field:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        grade:
+          type: string
+        description:
+          type: string
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        url:
+          type: string
+        repo:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        technologies:
+          type: array
+          items:
+            type: string
+
+    Certification:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        issuer:
+          type: string
+        date:
+          type: string
+          format: date
+        url:
+          type: string
+
+    Language:
+      type: object
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        proficiency:
+          type: string
+
+    ContactInfo:
+      type: object
+      properties:
+        emailAddress:
+          type: array
+          description: List of email addresses
+          items:
+            $ref: '#/components/schemas/EmailAddress'
+        phoneNumber:
+          type: array
+          description: List of phone numbers (use international format)
+          items:
+            $ref: '#/components/schemas/PhoneNumber'
+        socialMedia:
+          type: array
+          description: List of social media or professional profile links
+          items:
+            $ref: '#/components/schemas/SocialLink'
+      description: Contact information including email address, phone numbers and social media.
+
+    EmailAddress:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        description:
+          type: string
+        type:
+          type: string
+        priority:
+          type: number
+
+    PhoneNumber:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        countryCode:
+          type: string
+        number:
+          type: string
+
+    SocialLink:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        platform:
+          type: string
+        url:
+          type: string
+        username:
+          type: string
+
+    Award:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        issuer:
+          type: string
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+
+    Reference:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        relationship:
+          type: string
+        contact:
+          $ref: '#/components/schemas/ContactInfo'
+        note:
+          type: string
+
+    PaginatedSkills:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Skill'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    PaginatedExperiences:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Experience'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    PaginatedEducation:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Education'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    PaginatedProjects:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    PaginatedCertifications:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Certification'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    PaginatedLanguages:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Language'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    PaginatedAwards:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Award'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    PaginatedReferences:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reference'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
