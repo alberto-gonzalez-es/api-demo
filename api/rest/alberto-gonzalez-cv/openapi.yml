@@ -70,7 +70,7 @@ components:
     query:
       name: query
       in: query
-      description: Free text search term example.
+      description: Free text search term.
       schema:
         type: invalid_type  # ERROR 5: Tipo de dato inválido (no existe 'invalid_type')
 
