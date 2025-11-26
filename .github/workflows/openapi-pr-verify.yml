@@ -178,12 +178,13 @@ jobs:
         run: |
           npm install -g @stoplight/spectral-cli
 
-      - name: Download Spectral OAS ruleset
+      - name: Create Spectral ruleset extending spectral:oas
         run: |
-          # Download the official OpenAPI (OAS) ruleset
-          curl -L https://unpkg.com/@stoplight/spectral-oas@latest/ruleset.yaml -o .spectral-oas.yaml
-          ls -l .spectral-oas.yaml
-          head -n 5 .spectral-oas.yaml || true
+          cat > .spectral.yaml << 'EOF'
+          extends: "spectral:oas"
+          EOF
+          echo "Created .spectral.yaml:"
+          cat .spectral.yaml
 
       - name: Lint OpenAPI specs with Spectral
         id: lint_specs
@@ -202,8 +203,8 @@ jobs:
           while read -r spec; do
             echo "Linting ${spec} with Spectral..."
 
-            # Use the downloaded OAS ruleset file (avoids spectral:oas resolution issues)
-            RESULTS_JSON=$(spectral lint "${spec}" -f json -r .spectral-oas.yaml || true)
+            # Use the local ruleset that extends the built-in spectral:oas
+            RESULTS_JSON=$(spectral lint "${spec}" -f json -r .spectral.yaml || true)
 
             if [ -z "${RESULTS_JSON}" ] || ! echo "${RESULTS_JSON}" | jq empty >/dev/null 2>&1; then
               echo "No lint results for ${spec}."
@@ -250,7 +251,6 @@ jobs:
             echo "has_errors=false" >> "$GITHUB_OUTPUT"
           fi
           echo "report_b64=${REPORT_B64}" >> "$GITHUB_OUTPUT"
-
 
   summarize-openapi-checks:
     needs:
