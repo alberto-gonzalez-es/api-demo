@@ -1,0 +1,106 @@
+name: openapi-pr-verify
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+    paths:
+      - "api/rest/**"
+
+permissions:
+  contents: read
+
+jobs:
+  detect-openapi-changes:
+    runs-on: ubuntu-latest
+
+    outputs:
+      specs_json: ${{ steps.detect.outputs.specs_json }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Detect changed OpenAPI specs
+        id: detect
+        run: |
+          set -e
+
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+          echo "Base SHA: ${BASE_SHA}"
+          echo "Head SHA: ${HEAD_SHA}"
+
+          CHANGED_FILES=$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" || true)
+
+          echo "Changed files:"
+          echo "${CHANGED_FILES}"
+
+          # Keep only OpenAPI files under api/rest/**/openapi.yml|yaml
+          SPECS=$(echo "${CHANGED_FILES}" \
+            | grep -E '^api/rest/.*/openapi\.ya?ml$' \
+            | sort -u || true)
+
+          if [ -z "${SPECS}" ]; then
+            echo "No OpenAPI specs changed."
+            echo "specs_json=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "OpenAPI specs to validate:"
+          echo "${SPECS}"
+
+          # Convert the list to JSON array: ["path1","path2",...]
+          SPECS_JSON=$(printf '%s\n' "${SPECS}" | jq -R . | jq -s .)
+
+          echo "Specs JSON: ${SPECS_JSON}"
+          echo "specs_json=${SPECS_JSON}" >> "$GITHUB_OUTPUT"
+
+  validate-openapi:
+    needs: detect-openapi-changes
+    if: needs.detect-openapi-changes.outputs.specs_json != '' && needs.detect-openapi-changes.outputs.specs_json != '[]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Download openapi-generator-cli
+        run: |
+          curl -L \
+            https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.17.0/openapi-generator-cli-7.17.0.jar \
+            -o openapi-generator-cli.jar
+
+      - name: Validate changed OpenAPI specs
+        env:
+          SPECS_JSON: ${{ needs.detect-openapi-changes.outputs.specs_json }}
+        run: |
+          set -e
+
+          echo "Specs JSON: ${SPECS_JSON}"
+
+          echo "${SPECS_JSON}" | jq -r '.[]' | while read -r spec; do
+            echo "Validating ${spec}..."
+            java -jar openapi-generator-cli.jar validate -i "${spec}"
+            echo "✅ ${spec} is a valid OpenAPI definition"
+          done
