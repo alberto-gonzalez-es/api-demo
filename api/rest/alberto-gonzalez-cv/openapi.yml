@@ -7,6 +7,10 @@ info:
     It provides endpoints to access personal information, skills, work experiences,
     education, projects, publications, certifications, languages, contacts, social links,
     awards, and references.
+  contact:
+    name: Alberto González
+    email: contact@alberto-gonzalez.es
+    url: https://alberto-gonzalez.es
 
 servers:
   - url: https://api.alberto-gonzalez.es
@@ -18,6 +22,8 @@ paths:
       operationId: getPersonalInfo
       summary: Get personal information
       description: Basic information about the CV owner.
+      tags:
+        - Person
       responses:
         '200':
           description: Personal information
@@ -30,6 +36,9 @@ paths:
     get:
         operationId: getPersonById
         summary: Get person by id
+        description: Retrieve detailed person information by unique identifier.
+        tags:
+          - Person
         parameters:
           - $ref: '#/components/parameters/by_id'
         responses:
@@ -43,8 +52,10 @@ paths:
   /skills:
     get:
       operationId: getSkills
-      summary: List skills    
+      summary: List skills
       description: Get skills with filters, search, pagination and sorting.
+      tags:
+        - Skills
       parameters:
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/tags'
@@ -64,6 +75,9 @@ paths:
     get:
       operationId: getSkillById
       summary: Get skill by id
+      description: Retrieve a specific skill by unique identifier.
+      tags:
+        - Skills
       parameters:
         - $ref: '#/components/parameters/by_id'
       responses:
@@ -79,6 +93,8 @@ paths:
       operationId: getExperiences
       summary: List work experiences
       description: Filter by company, dates, location, tags, search, and pagination.
+      tags:
+        - Experience
       parameters:
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/company'
@@ -101,6 +117,9 @@ paths:
     get:
       operationId: getExperienceById
       summary: Get experience by id
+      description: Retrieve a specific work experience by unique identifier.
+      tags:
+        - Experience
       parameters:
         - $ref: '#/components/parameters/by_id'
       responses:
@@ -116,6 +135,8 @@ paths:
       operationId: getEducation
       summary: List education
       description: Academic records with optional filters and pagination.
+      tags:
+        - Education
       parameters:
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/start_year'
@@ -136,6 +157,9 @@ paths:
     get:
       operationId: getEducationById
       summary: Get education by id
+      description: Retrieve a specific education record by unique identifier.
+      tags:
+        - Education
       parameters:
         - $ref: '#/components/parameters/by_id'
       responses:
@@ -151,6 +175,8 @@ paths:
       operationId: getProjects
       summary: List projects
       description: Projects with filters, tags, date range, pagination and sorting.
+      tags:
+        - Projects
       parameters:
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/tags'
@@ -171,6 +197,9 @@ paths:
     get:
       operationId: getProjectById
       summary: Get project by id
+      description: Retrieve a specific project by unique identifier.
+      tags:
+        - Projects
       parameters:
         - name: id
           in: path
@@ -190,6 +219,8 @@ paths:
       operationId: getCertifications
       summary: List certifications
       description: Certifications with optional filters and pagination.
+      tags:
+        - Certifications
       parameters:
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/start_year'
@@ -209,6 +240,9 @@ paths:
     get:
       operationId: getCertificationById
       summary: Get certification by id
+      description: Retrieve a specific certification by unique identifier.
+      tags:
+        - Certifications
       parameters:
         - $ref: '#/components/parameters/by_id'
       responses:
@@ -224,6 +258,8 @@ paths:
       operationId: getLanguages
       summary: List languages
       description: Languages with optional filters such as proficiency and pagination.
+      tags:
+        - Languages
       parameters:
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/language'
@@ -243,6 +279,8 @@ paths:
       operationId: getContactInfoById
       summary: Get contact information by id
       description: Retrieve contact information such as email and phone numbers.
+      tags:
+        - Contact
       parameters:
         - $ref: '#/components/parameters/by_id'
       responses:
@@ -258,6 +296,8 @@ paths:
       operationId: getSocialLinksByContactId
       summary: Get social links by contact info id
       description: Retrieve social media or professional profile links.
+      tags:
+        - Contact
       parameters:
         - $ref: '#/components/parameters/by_id'
       responses:
@@ -275,6 +315,8 @@ paths:
       operationId: getAwards
       summary: List awards
       description: Awards and recognitions with filters and pagination.
+      tags:
+        - Awards
       parameters:
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/start_year'
@@ -294,6 +336,8 @@ paths:
       operationId: getReferences
       summary: List references
       description: Professional references with pagination.
+      tags:
+        - References
       parameters:
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/page'
