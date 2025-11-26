@@ -412,14 +412,6 @@ components:
           type: integer
           example: 7
 
-    Error:
-      type: object
-      properties:
-        code:
-          type: integer
-        message:
-          type: string
-
     Person:
       type: object
       properties:
@@ -543,31 +535,6 @@ components:
           items:
             type: string
         technologies:
-          type: array
-          items:
-            type: string
-
-    Publication:
-      type: object
-      properties:
-        id:
-          type: string
-        title:
-          type: string
-        venue:
-          type: string
-        date:
-          type: string
-          format: date
-        url:
-          type: string
-        authors:
-          type: array
-          items:
-            type: string
-        abstract:
-          type: string
-        tags:
           type: array
           items:
             type: string
@@ -723,16 +690,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Project'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-
-    PaginatedPublications:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Publication'
         meta:
           $ref: '#/components/schemas/PaginationMeta'
 
