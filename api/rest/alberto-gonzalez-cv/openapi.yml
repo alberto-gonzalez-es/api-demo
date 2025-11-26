@@ -731,12 +731,3 @@ components:
             $ref: '#/components/schemas/Reference'
         meta:
           $ref: '#/components/schemas/PaginationMeta'
-    
-    NotUsedSchema:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
