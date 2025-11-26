@@ -150,7 +150,7 @@ jobs:
               raise SystemExit(0)
 
           group_id = "es.alberto.gonzalez.api"
-          template_path = pathlib.Path("template/api/rest/maven/pom.mustache")
+          template_path = pathlib.Path(".github/workflows/template/api/rest/maven/pom.mustache")
           template = template_path.read_text(encoding="utf-8")
           renderer = pystache.Renderer()
 
