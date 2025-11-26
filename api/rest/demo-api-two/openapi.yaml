@@ -21,7 +21,7 @@ paths:
                     example: true
   /users:
     get:
-      summary: List users
+      summary: List users modified
       parameters:
         - in: query
           name: active
