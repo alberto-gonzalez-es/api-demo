@@ -84,7 +84,7 @@ jobs:
               elif base_branch == "develop":
                   final_version = f"{base_version}-SNAPSHOT"
               else:
-                  final_version = f"{base_version}-beta"
+                  final_version = f"{base_version}-BETA"
 
               apis.append({
                   "name": api_name,
