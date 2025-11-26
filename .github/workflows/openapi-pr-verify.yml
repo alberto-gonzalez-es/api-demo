@@ -121,6 +121,36 @@ jobs:
           echo "## OpenAPI validation report" >> "${REPORT_FILE}"
           echo "" >> "${REPORT_FILE}"
 
+          # Helper: group multi-line bullets into single lines
+          group_bullets() {
+            awk '
+              /^[ \t]*-/ {
+                # New bullet starts
+                if (current != "") {
+                  print current
+                }
+                line=$0
+                sub(/^[ \t]*/, "", line)       # trim leading spaces
+                sub(/^-+[ \t]*/, "", line)     # remove leading "- " or "-- "
+                current=line
+                next
+              }
+              {
+                # Continuation of current bullet: append text
+                if (current != "") {
+                  line=$0
+                  sub(/^[ \t]*/, "", line)
+                  current=current " " line
+                }
+              }
+              END {
+                if (current != "") {
+                  print current
+                }
+              }
+            '
+          }
+
           while read -r spec; do
             echo "Validating ${spec}..."
             OUTPUT_FILE="$(mktemp)"
@@ -134,7 +164,7 @@ jobs:
             echo "---- Output for ${spec} ----"
             cat "${OUTPUT_FILE}"
 
-            # Extract warnings block: lines after 'Warnings:' until blank line or [info]/Error(s)
+            # Extract warnings block: lines after 'Warnings:' until blank/info/error
             WARNINGS_BLOCK=$(awk '
               /^Warnings[[:space:]]*:/ {flag=1; next}
               /^\[/ {flag=0}
@@ -144,69 +174,79 @@ jobs:
               { if(flag) print }
             ' "${OUTPUT_FILE}")
 
-            # Extract errors block: lines after 'Errors:' until blank line or "Error:" summary or [info]
+            # Extract errors block: lines after 'Errors:' until blank/info/warnings/blank
             ERRORS_BLOCK=$(awk '
               /^Errors[[:space:]]*:/ {flag=1; next}
+              /^Warnings[[:space:]]*:/ {flag=0}
               /^\[/ {flag=0}
               /^Error:/ {flag=0}
-              /^Warnings:/ {if(flag==0) next}
               /^$/ {if(flag==1){flag=0; next}}
               { if(flag) print }
             ' "${OUTPUT_FILE}")
 
-            # Count bullet-style lines
-            WARNINGS_COUNT=0
-            if [ -n "${WARNINGS_BLOCK}" ]; then
-              WARNINGS_COUNT=$(printf '%s\n' "${WARNINGS_BLOCK}" | grep -E '^[[:space:]]*-' | wc -l | tr -d ' ')
+            # Group multi-line bullets into single lines
+            ERROR_LINES=""
+            if [ -n "${ERRORS_BLOCK}" ]; then
+              ERROR_LINES=$(printf '%s\n' "${ERRORS_BLOCK}" | group_bullets)
             fi
 
+            WARNING_LINES=""
+            if [ -n "${WARNINGS_BLOCK}" ]; then
+              WARNING_LINES=$(printf '%s\n' "${WARNINGS_BLOCK}" | group_bullets)
+            fi
+
+            # Count lines
             ERRORS_COUNT=0
-            if [ -n "${ERRORS_BLOCK}" ]; then
-              ERRORS_COUNT=$(printf '%s\n' "${ERRORS_BLOCK}" | grep -E '^[[:space:]]*-' | wc -l | tr -d ' ')
+            if [ -n "${ERROR_LINES}" ]; then
+              ERRORS_COUNT=$(printf '%s\n' "${ERROR_LINES}" | sed '/^$/d' | wc -l | tr -d ' ')
+            fi
+
+            WARNINGS_COUNT=0
+            if [ -n "${WARNING_LINES}" ]; then
+              WARNINGS_COUNT=$(printf '%s\n' "${WARNING_LINES}" | sed '/^$/d' | wc -l | tr -d ' ')
             fi
 
             if [ "${WARNINGS_COUNT}" -gt 0 ]; then
               HAS_WARNINGS=1
             fi
-            # Consider errors either by block or by non-zero exit code
+            # Consider errors either by parsed bullets or by non-zero exit
             if [ "${ERRORS_COUNT}" -gt 0 ] || [ "${EXIT_CODE}" -ne 0 ]; then
               HAS_ERRORS=1
             fi
 
             echo "### \`${spec}\`" >> "${REPORT_FILE}"
+            echo "" >> "${REPORT_FILE}"
 
             if [ "${ERRORS_COUNT}" -gt 0 ] || [ "${EXIT_CODE}" -ne 0 ]; then
-              # ❌ Errors present
               if [ "${ERRORS_COUNT}" -eq 0 ]; then
-                # No parsed bullets, fallback to 1 generic error
                 ERRORS_COUNT=1
               fi
+
               echo "#### ❌ ${ERRORS_COUNT} error(s)" >> "${REPORT_FILE}"
               echo "" >> "${REPORT_FILE}"
 
-              if [ -n "${ERRORS_BLOCK}" ]; then
-                # Normalize bullet lines
-                printf '%s\n' "${ERRORS_BLOCK}" \
-                  | grep -E '^[[:space:]]*-' \
-                  | sed -E 's/^[[:space:]]*-[[:space:]]*/- /' >> "${REPORT_FILE}"
+              if [ -n "${ERROR_LINES}" ]; then
+                while IFS= read -r line; do
+                  [ -z "${line}" ] && continue
+                  echo "- ${line}" >> "${REPORT_FILE}"
+                done <<< "${ERROR_LINES}"
               else
-                # Fallback: dump full output if we couldn't parse the block
                 echo '```text' >> "${REPORT_FILE}"
                 cat "${OUTPUT_FILE}" >> "${REPORT_FILE}"
                 echo '```' >> "${REPORT_FILE}"
               fi
 
               echo "" >> "${REPORT_FILE}"
-
             fi
 
             if [ "${WARNINGS_COUNT}" -gt 0 ]; then
               echo "#### ⚠️ ${WARNINGS_COUNT} warning(s)" >> "${REPORT_FILE}"
               echo "" >> "${REPORT_FILE}"
 
-              printf '%s\n' "${WARNINGS_BLOCK}" \
-                | grep -E '^[[:space:]]*-' \
-                | sed -E 's/^[[:space:]]*-[[:space:]]*/- /' >> "${REPORT_FILE}"
+              while IFS= read -r line; do
+                [ -z "${line}" ] && continue
+                echo "- ${line}" >> "${REPORT_FILE}"
+              done <<< "${WARNING_LINES}"
 
               echo "" >> "${REPORT_FILE}"
             fi
