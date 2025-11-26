@@ -300,3 +300,57 @@ jobs:
         run: |
           echo "OpenAPI validation found errors."
           exit 1
+
+  lint-openapi:
+    needs: detect-openapi-changes
+    if: needs.detect-openapi-changes.outputs.specs_json != '' && needs.detect-openapi-changes.outputs.specs_json != '[]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Install Spectral CLI
+        run: |
+          npm install -g @stoplight/spectral-cli
+
+      - name: Lint changed OpenAPI specs with Spectral
+        env:
+          SPECS_JSON: ${{ needs.detect-openapi-changes.outputs.specs_json }}
+        run: |
+          set -e
+
+          echo "Specs JSON: ${SPECS_JSON}"
+
+          # If you have a custom ruleset, Spectral will pick up .spectral.yaml by default.
+          # We configure it to fail only on 'error' level findings.
+          has_errors=0
+
+          echo "Linting OpenAPI specs with Spectral..."
+          echo ""
+
+          echo "${SPECS_JSON}" | jq -r '.[]' | while read -r spec; do
+            echo "spectral lint ${spec}"
+            if ! spectral lint "${spec}" --fail-severity=error; then
+              echo "Lint errors found in ${spec}"
+              has_errors=1
+            fi
+            echo ""
+          done
+
+          if [ "${has_errors}" -ne 0 ]; then
+            echo "OpenAPI linting found errors."
+            exit 1
+          else
+            echo "OpenAPI linting passed with no errors."
+          fi
