@@ -119,8 +119,11 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: "21"
+          java-version: "25"
           distribution: "temurin"
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -130,26 +133,10 @@ jobs:
       - name: Install Python deps
         run: pip install pystache
 
-      - name: Configure Maven for GitHub Packages
-        run: |
-          mkdir -p ~/.m2
-          cat <<EOF > ~/.m2/settings.xml
-          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
-            <servers>
-              <server>
-                <id>github</id>
-                <username>${GITHUB_ACTOR}</username>
-                <password>${GITHUB_TOKEN}</password>
-              </server>
-            </servers>
-          </settings>
-          EOF
-
       - name: Generate POMs from Mustache and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
           APIS_JSON: ${{ needs.detect-changes.outputs.apis_json }}
         run: |
           python << 'PY'
@@ -195,7 +182,7 @@ jobs:
                   [
                       "mvn",
                       "-DskipTests",
-                      "-DaltDeploymentRepository=github::default::https://maven.pkg.github.com/alberto-gonzalez-es/api-demo",
+                      "-DaltDeploymentRepository=github::https://maven.pkg.github.com/alberto-gonzalez-es/api-demo",
                       "deploy",
                   ],
                   cwd=str(out_dir),
