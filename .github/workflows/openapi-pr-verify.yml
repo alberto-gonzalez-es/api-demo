@@ -22,12 +22,36 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      specs_json: ${{ steps.detect.outputs.specs_json }}
+      specs_json: ${{ steps.filter_specs.outputs.specs_json }}
 
     steps:
-      - name: Detect changed OpenAPI specs
-        id: detect
-        uses: alberto-gonzalez-es/github-actions/actions/openapi/detect-changes@v1
+      - name: Detect changed files under api/rest
+        id: detect_files
+        uses: alberto-gonzalez-es/github-actions/actions/utils/detect-changes@v1
+        with:
+          path_prefix: api/rest/
+
+      - name: Filter OpenAPI specs (openapi.yml|yaml)
+        id: filter_specs
+        env:
+          FILES_JSON: ${{ steps.detect_files.outputs.files_json }}
+        run: |
+          set -e
+
+          echo "FILES_JSON: ${FILES_JSON}"
+
+          if [ -z "${FILES_JSON}" ] || [ "${FILES_JSON}" = "[]" ]; then
+            echo "No changed files. specs_json will be []."
+            echo "specs_json=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Filter only *openapi.yml / openapi.yaml
+          SPECS_JSON=$(echo "${FILES_JSON}" | \
+            jq -c '[ .[] | select(test("openapi\\.ya?ml$")) ]')
+
+          echo "Filtered specs_json: ${SPECS_JSON}"
+          echo "specs_json=${SPECS_JSON}" >> "$GITHUB_OUTPUT"
 
   validate-openapi:
     needs: detect-openapi-changes

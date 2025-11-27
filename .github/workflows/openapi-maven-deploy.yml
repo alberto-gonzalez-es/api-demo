@@ -20,13 +20,15 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      apis_json: ${{ steps.detect.outputs.apis_json }}
+      apis_json: ${{ steps.build_apis.outputs.apis_json }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - name: Detect changed files under api/rest (base -> merge commit)
+        id: detect_files
+        uses: alberto-gonzalez-es/github-actions/actions/utils/detect-changes@v1
         with:
-          fetch-depth: 0
+          head_sha: ${{ github.event.pull_request.merge_commit_sha }}
+          path_prefix: api/rest/
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -36,36 +38,28 @@ jobs:
       - name: Install Python deps
         run: pip install pyyaml
 
-      - name: Detect changed OpenAPI definitions
-        id: detect
+      - name: Build APIs JSON from changed specs
+        id: build_apis
+        env:
+          FILES_JSON: ${{ steps.detect_files.outputs.files_json }}
+          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
         run: |
           python << 'PY'
-          import os, json, subprocess, pathlib, sys
+          import os, json, pathlib, sys
           import yaml
 
-          base_sha = os.environ["GITHUB_EVENT_BASE_SHA"]
-          head_sha = os.environ["GITHUB_EVENT_HEAD_SHA"]
-          base_branch = os.environ["GITHUB_EVENT_BASE_REF"]
+          files_json = os.environ["FILES_JSON"]
+          base_branch = os.environ["BASE_BRANCH"]
 
           try:
-            result = subprocess.run(
-                ["git", "diff", "--name-only", base_sha, head_sha],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-          except subprocess.CalledProcessError as e:
-              print(f"[ERROR] git diff failed: {e}", file=sys.stderr)
-              print(e.stderr, file=sys.stderr)
-              sys.exit(1)
-
-          files = [f for f in result.stdout.splitlines() if f]
+            files = json.loads(files_json)
+          except json.JSONDecodeError as e:
+            print(f"[ERROR] Unable to parse FILES_JSON: {e}", file=sys.stderr)
+            sys.exit(1)
 
           apis = []
           for f in files:
               # We want paths like api/rest/<API_NAME>/openapi.yml|yaml
-              if not f.startswith("api/rest/"):
-                  continue
               if not (f.endswith("openapi.yml") or f.endswith("openapi.yaml")):
                   continue
 
@@ -76,6 +70,7 @@ jobs:
 
               spec_path = pathlib.Path(f)
               if not spec_path.is_file():
+                  print(f"[WARN] Spec file not found: {spec_path}", file=sys.stderr)
                   continue
 
               data = yaml.safe_load(spec_path.read_text(encoding="utf-8"))
@@ -108,10 +103,6 @@ jobs:
               with open(github_output, "a", encoding="utf-8") as fh:
                   fh.write(f"apis_json={apis_json}\n")
           PY
-        env:
-          GITHUB_EVENT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          GITHUB_EVENT_HEAD_SHA: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
-          GITHUB_EVENT_BASE_REF: ${{ github.event.pull_request.base.ref }}
 
   build-and-deploy:
     needs: detect-changes
