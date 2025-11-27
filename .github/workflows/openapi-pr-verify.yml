@@ -25,48 +25,9 @@ jobs:
       specs_json: ${{ steps.detect.outputs.specs_json }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Install jq
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
-
       - name: Detect changed OpenAPI specs
         id: detect
-        run: |
-          set -e
-
-          BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-
-          echo "Base SHA: ${BASE_SHA}"
-          echo "Head SHA: ${HEAD_SHA}"
-
-          CHANGED_FILES=$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" || true)
-
-          echo "Changed files:"
-          echo "${CHANGED_FILES}"
-
-          # Keep only OpenAPI files under api/rest/**/openapi.yml|yaml
-          SPECS=$(echo "${CHANGED_FILES}" \
-            | grep -E '^api/rest/.*/openapi\.ya?ml$' \
-            | sort -u || true)
-
-          if [ -z "${SPECS}" ]; then
-            echo "No OpenAPI specs changed."
-            printf 'specs_json=%s\n' "[]" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "OpenAPI specs to validate and lint:"
-          echo "${SPECS}"
-
-          SPECS_JSON_COMPACT=$(printf '%s\n' "${SPECS}" | jq -R . | jq -s -c .)
-          printf 'specs_json=%s\n' "${SPECS_JSON_COMPACT}" >> "$GITHUB_OUTPUT"
+        uses: alberto-gonzalez-es/github-actions/actions/openapi/detect-changes@v1
 
   validate-openapi:
     needs: detect-openapi-changes
@@ -74,82 +35,15 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      validation_has_errors: ${{ steps.validate_specs.outputs.has_errors }}
-      validation_report_b64: ${{ steps.validate_specs.outputs.report_b64 }}
+      validation_has_errors: ${{ steps.validate.outputs.validation_has_errors }}
+      validation_report_b64: ${{ steps.validate.outputs.validation_report_b64 }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Setup Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: "25"
-
-      - name: Install jq
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
-
-      - name: Download openapi-generator-cli
-        run: |
-          curl -L \
-            https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.17.0/openapi-generator-cli-7.17.0.jar \
-            -o openapi-generator-cli.jar
-
       - name: Validate OpenAPI specs
-        id: validate_specs
-        env:
-          SPECS_JSON: ${{ needs.detect-openapi-changes.outputs.specs_json }}
-        run: |
-          set -e
-
-          REPORT_FILE="openapi-validation-report.md"
-          : > "${REPORT_FILE}"
-
-          HAS_ERRORS=0
-
-          while read -r spec; do
-            echo "Validating ${spec}..."
-            OUTPUT_FILE="$(mktemp)"
-            EXIT_CODE=0
-
-            if ! java -jar openapi-generator-cli.jar validate -i "${spec}" > "${OUTPUT_FILE}" 2>&1; then
-              EXIT_CODE=$?
-            fi
-
-            # Force success if the validator explicitly states there's no issues
-            if grep -q "No validation issues detected" "${OUTPUT_FILE}"; then
-              EXIT_CODE=0
-            fi
-
-            echo "### \`${spec}\`" >> "${REPORT_FILE}"
-            echo "" >> "${REPORT_FILE}"
-
-            if [ "${EXIT_CODE}" -ne 0 ]; then
-              HAS_ERRORS=1
-              echo "#### ❌ Validation errors" >> "${REPORT_FILE}"
-              echo "" >> "${REPORT_FILE}"
-              echo '```text' >> "${REPORT_FILE}"
-              cat "${OUTPUT_FILE}" >> "${REPORT_FILE}"
-              echo '```' >> "${REPORT_FILE}"
-              echo "" >> "${REPORT_FILE}"
-            else
-              echo "- ✅ No validation issues detected." >> "${REPORT_FILE}"
-              echo "" >> "${REPORT_FILE}"
-            fi
-
-            rm -f "${OUTPUT_FILE}"
-          done <<< "$(echo "${SPECS_JSON}" | jq -r '.[]')"
-
-          if [ "${HAS_ERRORS}" -eq 0 ]; then
-            echo "All OpenAPI specs are valid." >> "${REPORT_FILE}"
-          fi
-
-          REPORT_B64=$(base64 -w0 "${REPORT_FILE}")
-          echo "report_b64=${REPORT_B64}" >> "$GITHUB_OUTPUT"
-          echo "has_errors=$([ "${HAS_ERRORS}" -ne 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+        id: validate
+        uses: alberto-gonzalez-es/github-actions/actions/openapi/validate@v1
+        with:
+          specs_json: ${{ needs.detect-openapi-changes.outputs.specs_json }}
 
   lint-openapi:
     needs: detect-openapi-changes
@@ -157,100 +51,15 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      lint_has_errors: ${{ steps.lint_specs.outputs.has_errors }}
-      lint_report_b64: ${{ steps.lint_specs.outputs.report_b64 }}
+      lint_has_errors: ${{ steps.lint.outputs.lint_has_errors }}
+      lint_report_b64: ${{ steps.lint.outputs.lint_report_b64 }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: "22"
-
-      - name: Install jq
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
-
-      - name: Install Spectral CLI
-        run: |
-          npm install -g @stoplight/spectral-cli
-
-      - name: Create Spectral ruleset extending spectral:oas
-        run: |
-          cat > .spectral.yaml << 'EOF'
-          extends: "spectral:oas"
-          EOF
-          echo "Created .spectral.yaml:"
-          cat .spectral.yaml
-
       - name: Lint OpenAPI specs with Spectral
-        id: lint_specs
-        env:
-          SPECS_JSON: ${{ needs.detect-openapi-changes.outputs.specs_json }}
-        run: |
-          set -e
-
-          echo "Specs JSON: ${SPECS_JSON}"
-
-          REPORT_FILE="openapi-lint-report.md"
-          : > "${REPORT_FILE}"
-
-          HAS_ERRORS=0
-
-          while read -r spec; do
-            echo "Linting ${spec} with Spectral..."
-
-            # Use the local ruleset that extends the built-in spectral:oas
-            RESULTS_JSON=$(spectral lint "${spec}" -f json -r .spectral.yaml || true)
-
-            if [ -z "${RESULTS_JSON}" ] || ! echo "${RESULTS_JSON}" | jq empty >/dev/null 2>&1; then
-              echo "No lint results for ${spec}."
-              continue
-            fi
-
-            ERRORS_JSON=$(echo "${RESULTS_JSON}" | jq '[.[] | select(.severity == 0)]')
-            WARNINGS_JSON=$(echo "${RESULTS_JSON}" | jq '[.[] | select(.severity == 1)]')
-
-            ERRORS_COUNT=$(echo "${ERRORS_JSON}" | jq 'length')
-            WARNINGS_COUNT=$(echo "${WARNINGS_JSON}" | jq 'length')
-
-            echo "### \`${spec}\`" >> "${REPORT_FILE}"
-            echo "" >> "${REPORT_FILE}"
-
-            if [ "${ERRORS_COUNT}" -gt 0 ]; then
-              HAS_ERRORS=1
-              echo "#### ❌ ${ERRORS_COUNT} lint error(s)" >> "${REPORT_FILE}"
-              echo "" >> "${REPORT_FILE}"
-              echo "${ERRORS_JSON}" | jq -r '.[] | "- \(.message) (code: \(.code)) at `\(.path | join("."))`"' >> "${REPORT_FILE}"
-              echo "" >> "${REPORT_FILE}"
-            fi
-
-            if [ "${WARNINGS_COUNT}" -gt 0 ]; then
-              echo "#### ⚠️ ${WARNINGS_COUNT} lint warning(s)" >> "${REPORT_FILE}"
-              echo "" >> "${REPORT_FILE}"
-              echo "${WARNINGS_JSON}" | jq -r '.[] | "- \(.message) (code: \(.code)) at `\(.path | join("."))`"' >> "${REPORT_FILE}"
-              echo "" >> "${REPORT_FILE}"
-            fi
-
-            if [ "${ERRORS_COUNT}" -eq 0 ] && [ "${WARNINGS_COUNT}" -eq 0 ]; then
-              echo "- ✅ No lint issues found." >> "${REPORT_FILE}"
-              echo "" >> "${REPORT_FILE}"
-            fi
-          done <<< "$(echo "${SPECS_JSON}" | jq -r '.[]')"
-
-          echo "Lint report:"
-          cat "${REPORT_FILE}"
-
-          REPORT_B64=$(base64 -w0 "${REPORT_FILE}")
-          if [ "${HAS_ERRORS}" -ne 0 ]; then
-            echo "has_errors=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_errors=false" >> "$GITHUB_OUTPUT"
-          fi
-          echo "report_b64=${REPORT_B64}" >> "$GITHUB_OUTPUT"
+        id: lint
+        uses: alberto-gonzalez-es/github-actions/actions/openapi/lint@v1
+        with:
+          specs_json: ${{ needs.detect-openapi-changes.outputs.specs_json }}
 
   summarize-openapi-checks:
     needs:
