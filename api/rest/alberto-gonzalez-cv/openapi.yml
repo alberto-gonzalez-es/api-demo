@@ -39,7 +39,7 @@ tags:
 paths:
   /skills:
     get:
-      operationId: getSkills
+      operationId: getSkills  
       summary: List skills
       description: Get skills with filters, search, pagination and sorting.
       tags:
