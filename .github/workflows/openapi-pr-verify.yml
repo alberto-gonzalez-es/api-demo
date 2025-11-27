@@ -33,11 +33,10 @@ jobs:
 
       - name: Filter OpenAPI specs (openapi.yml|yaml)
         id: filter_specs
-        env:
-          FILES_JSON: ${{ steps.detect_files.outputs.files_json }}
         run: |
           set -e
 
+          FILES_JSON='${{ steps.detect_files.outputs.files_json }}'
           echo "FILES_JSON: ${FILES_JSON}"
 
           if [ -z "${FILES_JSON}" ] || [ "${FILES_JSON}" = "[]" ]; then
@@ -46,9 +45,7 @@ jobs:
             exit 0
           fi
 
-          # Filter only *openapi.yml / openapi.yaml
-          SPECS_JSON=$(echo "${FILES_JSON}" | \
-            jq -c '[ .[] | select(test("openapi\\.ya?ml$")) ]')
+          SPECS_JSON=$(echo "${FILES_JSON}" | jq -c '[ .[] | select(test("openapi\\.ya?ml$")) ]')
 
           echo "Filtered specs_json: ${SPECS_JSON}"
           echo "specs_json=${SPECS_JSON}" >> "$GITHUB_OUTPUT"
