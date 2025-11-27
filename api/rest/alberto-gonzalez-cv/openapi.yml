@@ -48,7 +48,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PersonFAKE'
+                $ref: '#/components/schemas/Person'
 
   /person/{id}:
     get:
@@ -793,3 +793,9 @@ components:
             $ref: '#/components/schemas/Reference'
         meta:
           $ref: '#/components/schemas/PaginationMeta'
+
+    UnusedSchema:
+      type: object
+      properties:
+        id:
+          type: string
