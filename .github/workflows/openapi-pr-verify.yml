@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Detect changed files under api/rest
         id: detect_files
-        uses: alberto-gonzalez-es/github-actions/actions/utils/detect-changes@v1
+        uses: alberto-gonzalez-es/github-actions/actions/util/detect-changes@v1
         with:
           path_prefix: api/rest/
 

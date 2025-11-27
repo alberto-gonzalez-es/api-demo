@@ -25,7 +25,7 @@ jobs:
     steps:
       - name: Detect changed files under api/rest (base -> merge commit)
         id: detect_files
-        uses: alberto-gonzalez-es/github-actions/actions/utils/detect-changes@v1
+        uses: alberto-gonzalez-es/github-actions/actions/util/detect-changes@v1
         with:
           head_sha: ${{ github.event.pull_request.merge_commit_sha }}
           path_prefix: api/rest/
