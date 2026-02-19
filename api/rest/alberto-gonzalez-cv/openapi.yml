@@ -2,7 +2,17 @@ openapi: 3.0.4
 info:
   title: Curriculum Vitae API
   version: 0.0.6
-  description: This is the OpenAPI specification for Alberto González's Curriculum Vitae (CV) API.
+  description: |
+    This is the OpenAPI specification for Alberto González's Curriculum Vitae (CV) API.
+
+    ## Multi-language support
+    All endpoints support content negotiation via the `Accept-Language` header.
+    Supported languages:
+    - **es** — Spanish (default)
+    - **en** — English
+    - **de** — German
+
+    If no `Accept-Language` header is provided, the response will be in Spanish.
   contact:
     name: Alberto González
     email: contact@alberto-gonzalez.es
@@ -42,9 +52,14 @@ paths:
       description: Basic information about the CV owner.
       tags:
         - Person
+      parameters:
+        - $ref: '#/components/parameters/accept_language'
       responses:
         '200':
           description: Personal information
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -59,9 +74,13 @@ paths:
           - Person
         parameters:
           - $ref: '#/components/parameters/by_id'
+          - $ref: '#/components/parameters/accept_language'
         responses:
           '200':
             description: Person
+            headers:
+              Content-Language:
+                $ref: '#/components/headers/Content-Language'
             content:
               application/json:
                 schema:
@@ -75,6 +94,7 @@ paths:
       tags:
         - Skills
       parameters:
+        - $ref: '#/components/parameters/accept_language'
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/tags'
         - $ref: '#/components/parameters/level'
@@ -84,6 +104,9 @@ paths:
       responses:
         '200':
           description: Paginated list of skills
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -98,9 +121,13 @@ paths:
         - Skills
       parameters:
         - $ref: '#/components/parameters/by_id'
+        - $ref: '#/components/parameters/accept_language'
       responses:
         '200':
           description: Skill
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -114,6 +141,7 @@ paths:
       tags:
         - Experience
       parameters:
+        - $ref: '#/components/parameters/accept_language'
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/company'
         - $ref: '#/components/parameters/start_year'
@@ -126,6 +154,9 @@ paths:
       responses:
         '200':
           description: Paginated list of experiences
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -140,9 +171,13 @@ paths:
         - Experience
       parameters:
         - $ref: '#/components/parameters/by_id'
+        - $ref: '#/components/parameters/accept_language'
       responses:
         '200':
           description: Experience
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -156,6 +191,7 @@ paths:
       tags:
         - Education
       parameters:
+        - $ref: '#/components/parameters/accept_language'
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/start_year'
         - $ref: '#/components/parameters/end_year'
@@ -166,6 +202,9 @@ paths:
       responses:
         '200':
           description: Paginated list of education
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -180,9 +219,13 @@ paths:
         - Education
       parameters:
         - $ref: '#/components/parameters/by_id'
+        - $ref: '#/components/parameters/accept_language'
       responses:
         '200':
           description: Education
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -196,6 +239,7 @@ paths:
       tags:
         - Projects
       parameters:
+        - $ref: '#/components/parameters/accept_language'
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/tags'
         - $ref: '#/components/parameters/start_year'
@@ -206,6 +250,9 @@ paths:
       responses:
         '200':
           description: Paginated list of projects
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -224,9 +271,13 @@ paths:
           required: true
           schema:
             type: string
+        - $ref: '#/components/parameters/accept_language'
       responses:
         '200':
           description: Project
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -240,6 +291,7 @@ paths:
       tags:
         - Certifications
       parameters:
+        - $ref: '#/components/parameters/accept_language'
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/start_year'
         - $ref: '#/components/parameters/end_year'
@@ -249,6 +301,9 @@ paths:
       responses:
         '200':
           description: Paginated list of certifications
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -263,9 +318,13 @@ paths:
         - Certifications
       parameters:
         - $ref: '#/components/parameters/by_id'
+        - $ref: '#/components/parameters/accept_language'
       responses:
         '200':
           description: Certification
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -279,6 +338,7 @@ paths:
       tags:
         - Languages
       parameters:
+        - $ref: '#/components/parameters/accept_language'
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/language'
         - $ref: '#/components/parameters/proficiency'
@@ -287,6 +347,9 @@ paths:
       responses:
         '200':
           description: Paginated list of languages
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -301,9 +364,13 @@ paths:
         - Contact
       parameters:
         - $ref: '#/components/parameters/by_id'
+        - $ref: '#/components/parameters/accept_language'
       responses:
         '200':
           description: Contacts
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -318,9 +385,13 @@ paths:
         - Contact
       parameters:
         - $ref: '#/components/parameters/by_id'
+        - $ref: '#/components/parameters/accept_language'
       responses:
         '200':
           description: Social links
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -336,6 +407,7 @@ paths:
       tags:
         - Awards
       parameters:
+        - $ref: '#/components/parameters/accept_language'
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/start_year'
         - $ref: '#/components/parameters/end_year'
@@ -344,6 +416,9 @@ paths:
       responses:
         '200':
           description: Paginated list of awards
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -357,12 +432,16 @@ paths:
       tags:
         - References
       parameters:
+        - $ref: '#/components/parameters/accept_language'
         - $ref: '#/components/parameters/query'
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/per_page'
       responses:
         '200':
           description: Paginated list of references
+          headers:
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
           content:
             application/json:
               schema:
@@ -370,6 +449,21 @@ paths:
 
 components:
   parameters:
+    accept_language:
+      name: Accept-Language
+      in: header
+      description: |
+        Language preference for the response content.
+        Supported: es (Spanish, default), en (English), de (German).
+      required: false
+      schema:
+        type: string
+        enum:
+          - es
+          - en
+          - de
+        default: es
+      example: es
     by_id:
       name: id
       in: path
@@ -455,6 +549,17 @@ components:
       description: Proficiency level (A1-C2, beginner, intermediate, advanced).
       schema:
         type: string
+
+  headers:
+    Content-Language:
+      description: Language of the response content.
+      schema:
+        type: string
+        enum:
+          - es
+          - en
+          - de
+        example: es
 
   schemas:
     PaginationMeta:
