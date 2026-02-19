@@ -491,7 +491,7 @@ components:
           type: string
         age:
           type: integer
-        profilePhotoUrl:
+        photoUrl:
           type: string
         contactInfoId:
           type: string
