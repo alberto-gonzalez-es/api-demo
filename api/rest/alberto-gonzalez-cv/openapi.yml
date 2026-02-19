@@ -35,7 +35,7 @@ tags:
     description: Professional references
 
 paths:
-  /person/personal-info:
+  /v1/person/personal-info:
     get:
       operationId: getPersonalInfo
       summary: Get personal information
@@ -50,7 +50,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Person'
 
-  /person/{id}:
+  /v1/person/{id}:
     get:
         operationId: getPersonById
         summary: Get person by id
@@ -67,7 +67,7 @@ paths:
                 schema:
                   $ref: '#/components/schemas/Person'
 
-  /skills:
+  /v1/skills:
     get:
       operationId: getSkills
       summary: List skills
@@ -89,7 +89,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedSkills'
 
-  /skills/{id}:
+  /v1/skills/{id}:
     get:
       operationId: getSkillById
       summary: Get skill by id
@@ -106,7 +106,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Skill'
 
-  /experience:
+  /v1/experience:
     get:
       operationId: getExperiences
       summary: List work experiences
@@ -131,7 +131,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedExperiences'
 
-  /experience/{id}:
+  /v1/experience/{id}:
     get:
       operationId: getExperienceById
       summary: Get experience by id
@@ -148,7 +148,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Experience'
 
-  /education:
+  /v1/education:
     get:
       operationId: getEducation
       summary: List education
@@ -171,7 +171,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedEducation'
 
-  /education/{id}:
+  /v1/education/{id}:
     get:
       operationId: getEducationById
       summary: Get education by id
@@ -188,7 +188,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Education'
 
-  /projects:
+  /v1/projects:
     get:
       operationId: getProjects
       summary: List projects
@@ -211,7 +211,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedProjects'
 
-  /projects/{id}:
+  /v1/projects/{id}:
     get:
       operationId: getProjectById
       summary: Get project by id
@@ -232,7 +232,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Project'
 
-  /certification:
+  /v1/certification:
     get:
       operationId: getCertifications
       summary: List certifications
@@ -254,7 +254,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedCertifications'
 
-  /certification/{id}:
+  /v1/certification/{id}:
     get:
       operationId: getCertificationById
       summary: Get certification by id
@@ -271,7 +271,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Certification'
 
-  /languages:
+  /v1/languages:
     get:
       operationId: getLanguages
       summary: List languages
@@ -292,7 +292,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedLanguages'
 
-  /contact-info/{id}:
+  /v1/contact-info/{id}:
     get:
       operationId: getContactInfoById
       summary: Get contact information by id
@@ -309,7 +309,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ContactInfo'
 
-  /contact-info/{id}/social:
+  /v1/contact-info/{id}/social:
     get:
       operationId: getSocialLinksByContactId
       summary: Get social links by contact info id
@@ -328,7 +328,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/SocialLink'
 
-  /awards:
+  /v1/awards:
     get:
       operationId: getAwards
       summary: List awards
@@ -349,7 +349,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAwards'
 
-  /references:
+  /v1/references:
     get:
       operationId: getReferences
       summary: List references
