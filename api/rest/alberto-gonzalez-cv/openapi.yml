@@ -1,18 +1,9 @@
 openapi: 3.0.4
 info:
   title: Curriculum Vitae API
-  version: 0.0.7
+  version: 0.0.8
   description: |
     This is the OpenAPI specification for Alberto González's Curriculum Vitae (CV) API.
-
-    ## Multi-language support
-    All endpoints support content negotiation via the `Accept-Language` header.
-    Supported languages:
-    - **es** — Spanish (default)
-    - **en** — English
-    - **de** — German
-
-    If no `Accept-Language` header is provided, the response will be in Spanish.
   contact:
     name: Alberto González
     email: contact@alberto-gonzalez.es
@@ -25,6 +16,8 @@ servers:
 tags:
   - name: Person
     description: Personal information endpoints
+  - name: Download
+    description: File download endpoints
   - name: Skills
     description: Skills and competencies
   - name: Experience
@@ -45,6 +38,32 @@ tags:
     description: Professional references
 
 paths:
+  /v1/cv/download:
+    get:
+      operationId: downloadCvPdf
+      summary: Download CV as PDF
+      description: Generate the CV in PDF format on the backend and return it as a downloadable file.
+      tags:
+        - Download
+      parameters:
+        - $ref: '#/components/parameters/accept_language'
+      responses:
+        '200':
+          description: CV PDF file generated successfully
+          headers:
+            Content-Disposition:
+              description: Indicates that the response should be downloaded as a file.
+              schema:
+                type: string
+              example: attachment; filename="alberto-gonzalez-cv.pdf"
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
   /v1/person/personal-info:
     get:
       operationId: getPersonalInfo
@@ -449,21 +468,14 @@ paths:
 
 components:
   parameters:
+    
     accept_language:
       name: Accept-Language
       in: header
-      description: |
-        Language preference for the response content.
-        Supported: es (Spanish, default), en (English), de (German).
       required: false
       schema:
         type: string
-        enum:
-          - es
-          - en
-          - de
-        default: es
-      example: es
+    
     by_id:
       name: id
       in: path
@@ -472,12 +484,14 @@ components:
       schema:
         type: string
         format: uuid
+    
     query:
       name: query
       in: query
       description: Free text search term.
       schema:
         type: string
+    
     page:
       name: page
       in: query
@@ -486,6 +500,7 @@ components:
         type: integer
         minimum: 1
         default: 1
+    
     per_page:
       name: per_page
       in: query
@@ -495,54 +510,63 @@ components:
         minimum: 1
         maximum: 200
         default: 20
+    
     sort:
       name: sort
       in: query
       description: Sort field, use prefix - for descending (e.g. start_date or -start_date).
       schema:
         type: string
+    
     tags:
       name: tags
       in: query
       description: Filter by tags; multiple values separated by commas.
       schema:
         type: string
+    
     level:
       name: level
       in: query
       description: Skill level or seniority (junior, mid, senior, expert).
       schema:
         type: string
+    
     company:
       name: company
       in: query
       description: Filter by company.
       schema:
         type: string
+    
     start_year:
       name: start_year
       in: query
       description: Start year (filter by year range).
       schema:
         type: integer
+    
     end_year:
       name: end_year
       in: query
       description: End year (filter by year range).
       schema:
         type: integer
+    
     location:
       name: location
       in: query
       description: Filter by location/city/country.
       schema:
         type: string
+    
     language:
       name: language
       in: query
       description: Filter by language (ISO code or name).
       schema:
         type: string
+    
     proficiency:
       name: proficiency
       in: query
@@ -551,15 +575,12 @@ components:
         type: string
 
   headers:
+    
     Content-Language:
       description: Language of the response content.
       schema:
         type: string
-        enum:
-          - es
-          - en
-          - de
-        example: es
+      example: es
 
   schemas:
     PaginationMeta:
