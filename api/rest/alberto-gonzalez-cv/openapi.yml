@@ -16,6 +16,8 @@ servers:
 tags:
   - name: Person
     description: Personal information endpoints
+  - name: Download
+    description: File download endpoints
   - name: Skills
     description: Skills and competencies
   - name: Experience
@@ -36,6 +38,32 @@ tags:
     description: Professional references
 
 paths:
+  /v1/cv/download:
+    get:
+      operationId: downloadCvPdf
+      summary: Download CV as PDF
+      description: Generate the CV in PDF format on the backend and return it as a downloadable file.
+      tags:
+        - Download
+      parameters:
+        - $ref: '#/components/parameters/accept_language'
+      responses:
+        '200':
+          description: CV PDF file generated successfully
+          headers:
+            Content-Disposition:
+              description: Indicates that the response should be downloaded as a file.
+              schema:
+                type: string
+              example: attachment; filename="alberto-gonzalez-cv.pdf"
+            Content-Language:
+              $ref: '#/components/headers/Content-Language'
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
   /v1/person/personal-info:
     get:
       operationId: getPersonalInfo
