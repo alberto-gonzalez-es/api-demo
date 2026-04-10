@@ -895,7 +895,7 @@ components:
           type: string
           format: email
           maxLength: 254
-          pattern: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$'
+          pattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
           example: john.doe@example.com
         subject:
           type: string
@@ -914,7 +914,7 @@ components:
           minLength: 7
           maxLength: 20
           pattern: '^\\+?[0-9() .-]{7,20}$'
-          example: +34600111222
+          example: "+34600111222"
         website:
           type: string
           description: Optional website field.
