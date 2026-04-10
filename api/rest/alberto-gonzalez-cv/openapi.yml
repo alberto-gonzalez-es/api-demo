@@ -1,7 +1,7 @@
 openapi: 3.0.4
 info:
   title: Curriculum Vitae API
-  version: 0.0.9
+  version: 0.0.10
   description: |
     This is the OpenAPI specification for Alberto González's Curriculum Vitae (CV) API.
   contact:
@@ -30,8 +30,10 @@ tags:
     description: Professional certifications
   - name: Languages
     description: Language proficiencies
-  - name: Contact
+  - name: ContactInfo
     description: Contact information and social links
+  - name: Contact
+    description: Contact form submission
   - name: Awards
     description: Awards and recognitions
   - name: References
@@ -380,7 +382,7 @@ paths:
       summary: Get contact information by id
       description: Retrieve contact information such as email and phone numbers.
       tags:
-        - Contact
+        - ContactInfo
       parameters:
         - $ref: "#/components/parameters/by_id"
         - $ref: "#/components/parameters/accept_language"
@@ -401,7 +403,7 @@ paths:
       summary: Get social links by contact info id
       description: Retrieve social media or professional profile links.
       tags:
-        - Contact
+        - ContactInfo
       parameters:
         - $ref: "#/components/parameters/by_id"
         - $ref: "#/components/parameters/accept_language"
