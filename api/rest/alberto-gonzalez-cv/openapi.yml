@@ -432,25 +432,16 @@ paths:
             schema:
               $ref: "#/components/schemas/ContactFormRequest"
             examples:
-              valid:
+              formRequest:
                 summary: Valid contact form request
                 value:
                   name: John Doe
                   email: john.doe@example.com
                   subject: Project opportunity
                   message: I would like to discuss a potential collaboration.
-                  phone: +34600111222
+                  phone: "+34600111222"
                   website: ""
                   captchaToken: 03AFcWeA4x2SAMPLE_TOKEN
-              bot_payload:
-                summary: Bot payload (hidden field filled)
-                value:
-                  name: Bot User
-                  email: bot@example.com
-                  subject: Cheap services
-                  message: Buy now
-                  website: i-am-a-bot
-                  captchaToken: invalid-token
       responses:
         "202":
           description: Contact form accepted for email delivery
@@ -913,7 +904,7 @@ components:
           type: string
           minLength: 7
           maxLength: 20
-          pattern: '^\\+?[0-9() .-]{7,20}$'
+          pattern: "^\\+?[0-9() .-]{7,20}$"
           example: "+34600111222"
         website:
           type: string
