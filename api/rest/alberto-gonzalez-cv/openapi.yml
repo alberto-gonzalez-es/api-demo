@@ -1,7 +1,7 @@
 openapi: 3.0.4
 info:
   title: Curriculum Vitae API
-  version: 0.0.8
+  version: 0.0.9
   description: |
     This is the OpenAPI specification for Alberto González's Curriculum Vitae (CV) API.
   contact:
@@ -46,9 +46,9 @@ paths:
       tags:
         - Download
       parameters:
-        - $ref: '#/components/parameters/accept_language'
+        - $ref: "#/components/parameters/accept_language"
       responses:
-        '200':
+        "200":
           description: CV PDF file generated successfully
           headers:
             Content-Disposition:
@@ -57,7 +57,7 @@ paths:
                 type: string
               example: attachment; filename="alberto-gonzalez-cv.pdf"
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/pdf:
               schema:
@@ -72,38 +72,38 @@ paths:
       tags:
         - Person
       parameters:
-        - $ref: '#/components/parameters/accept_language'
+        - $ref: "#/components/parameters/accept_language"
       responses:
-        '200':
+        "200":
           description: Personal information
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Person'
+                $ref: "#/components/schemas/Person"
 
   /v1/person/{id}:
     get:
-        operationId: getPersonById
-        summary: Get person by id
-        description: Retrieve detailed person information by unique identifier.
-        tags:
-          - Person
-        parameters:
-          - $ref: '#/components/parameters/by_id'
-          - $ref: '#/components/parameters/accept_language'
-        responses:
-          '200':
-            description: Person
-            headers:
-              Content-Language:
-                $ref: '#/components/headers/Content-Language'
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Person'
+      operationId: getPersonById
+      summary: Get person by id
+      description: Retrieve detailed person information by unique identifier.
+      tags:
+        - Person
+      parameters:
+        - $ref: "#/components/parameters/by_id"
+        - $ref: "#/components/parameters/accept_language"
+      responses:
+        "200":
+          description: Person
+          headers:
+            Content-Language:
+              $ref: "#/components/headers/Content-Language"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Person"
 
   /v1/skills:
     get:
@@ -113,23 +113,23 @@ paths:
       tags:
         - Skills
       parameters:
-        - $ref: '#/components/parameters/accept_language'
-        - $ref: '#/components/parameters/query'
-        - $ref: '#/components/parameters/tags'
-        - $ref: '#/components/parameters/level'
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/per_page'
-        - $ref: '#/components/parameters/sort'
+        - $ref: "#/components/parameters/accept_language"
+        - $ref: "#/components/parameters/query"
+        - $ref: "#/components/parameters/tags"
+        - $ref: "#/components/parameters/level"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
+        - $ref: "#/components/parameters/sort"
       responses:
-        '200':
+        "200":
           description: Paginated list of skills
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedSkills'
+                $ref: "#/components/schemas/PaginatedSkills"
 
   /v1/skills/{id}:
     get:
@@ -139,18 +139,18 @@ paths:
       tags:
         - Skills
       parameters:
-        - $ref: '#/components/parameters/by_id'
-        - $ref: '#/components/parameters/accept_language'
+        - $ref: "#/components/parameters/by_id"
+        - $ref: "#/components/parameters/accept_language"
       responses:
-        '200':
+        "200":
           description: Skill
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Skill'
+                $ref: "#/components/schemas/Skill"
 
   /v1/experience:
     get:
@@ -160,26 +160,26 @@ paths:
       tags:
         - Experience
       parameters:
-        - $ref: '#/components/parameters/accept_language'
-        - $ref: '#/components/parameters/query'
-        - $ref: '#/components/parameters/company'
-        - $ref: '#/components/parameters/start_year'
-        - $ref: '#/components/parameters/end_year'
-        - $ref: '#/components/parameters/location'
-        - $ref: '#/components/parameters/tags'
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/per_page'
-        - $ref: '#/components/parameters/sort'
+        - $ref: "#/components/parameters/accept_language"
+        - $ref: "#/components/parameters/query"
+        - $ref: "#/components/parameters/company"
+        - $ref: "#/components/parameters/start_year"
+        - $ref: "#/components/parameters/end_year"
+        - $ref: "#/components/parameters/location"
+        - $ref: "#/components/parameters/tags"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
+        - $ref: "#/components/parameters/sort"
       responses:
-        '200':
+        "200":
           description: Paginated list of experiences
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedExperiences'
+                $ref: "#/components/schemas/PaginatedExperiences"
 
   /v1/experience/{id}:
     get:
@@ -189,18 +189,18 @@ paths:
       tags:
         - Experience
       parameters:
-        - $ref: '#/components/parameters/by_id'
-        - $ref: '#/components/parameters/accept_language'
+        - $ref: "#/components/parameters/by_id"
+        - $ref: "#/components/parameters/accept_language"
       responses:
-        '200':
+        "200":
           description: Experience
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Experience'
+                $ref: "#/components/schemas/Experience"
 
   /v1/education:
     get:
@@ -210,24 +210,24 @@ paths:
       tags:
         - Education
       parameters:
-        - $ref: '#/components/parameters/accept_language'
-        - $ref: '#/components/parameters/query'
-        - $ref: '#/components/parameters/start_year'
-        - $ref: '#/components/parameters/end_year'
-        - $ref: '#/components/parameters/location'
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/per_page'
-        - $ref: '#/components/parameters/sort'
+        - $ref: "#/components/parameters/accept_language"
+        - $ref: "#/components/parameters/query"
+        - $ref: "#/components/parameters/start_year"
+        - $ref: "#/components/parameters/end_year"
+        - $ref: "#/components/parameters/location"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
+        - $ref: "#/components/parameters/sort"
       responses:
-        '200':
+        "200":
           description: Paginated list of education
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedEducation'
+                $ref: "#/components/schemas/PaginatedEducation"
 
   /v1/education/{id}:
     get:
@@ -237,18 +237,18 @@ paths:
       tags:
         - Education
       parameters:
-        - $ref: '#/components/parameters/by_id'
-        - $ref: '#/components/parameters/accept_language'
+        - $ref: "#/components/parameters/by_id"
+        - $ref: "#/components/parameters/accept_language"
       responses:
-        '200':
+        "200":
           description: Education
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Education'
+                $ref: "#/components/schemas/Education"
 
   /v1/projects:
     get:
@@ -258,24 +258,24 @@ paths:
       tags:
         - Projects
       parameters:
-        - $ref: '#/components/parameters/accept_language'
-        - $ref: '#/components/parameters/query'
-        - $ref: '#/components/parameters/tags'
-        - $ref: '#/components/parameters/start_year'
-        - $ref: '#/components/parameters/end_year'
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/per_page'
-        - $ref: '#/components/parameters/sort'
+        - $ref: "#/components/parameters/accept_language"
+        - $ref: "#/components/parameters/query"
+        - $ref: "#/components/parameters/tags"
+        - $ref: "#/components/parameters/start_year"
+        - $ref: "#/components/parameters/end_year"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
+        - $ref: "#/components/parameters/sort"
       responses:
-        '200':
+        "200":
           description: Paginated list of projects
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedProjects'
+                $ref: "#/components/schemas/PaginatedProjects"
 
   /v1/projects/{id}:
     get:
@@ -290,17 +290,17 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/accept_language'
+        - $ref: "#/components/parameters/accept_language"
       responses:
-        '200':
+        "200":
           description: Project
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Project'
+                $ref: "#/components/schemas/Project"
 
   /v1/certification:
     get:
@@ -310,23 +310,23 @@ paths:
       tags:
         - Certifications
       parameters:
-        - $ref: '#/components/parameters/accept_language'
-        - $ref: '#/components/parameters/query'
-        - $ref: '#/components/parameters/start_year'
-        - $ref: '#/components/parameters/end_year'
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/per_page'
-        - $ref: '#/components/parameters/sort'
+        - $ref: "#/components/parameters/accept_language"
+        - $ref: "#/components/parameters/query"
+        - $ref: "#/components/parameters/start_year"
+        - $ref: "#/components/parameters/end_year"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
+        - $ref: "#/components/parameters/sort"
       responses:
-        '200':
+        "200":
           description: Paginated list of certifications
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedCertifications'
+                $ref: "#/components/schemas/PaginatedCertifications"
 
   /v1/certification/{id}:
     get:
@@ -336,18 +336,18 @@ paths:
       tags:
         - Certifications
       parameters:
-        - $ref: '#/components/parameters/by_id'
-        - $ref: '#/components/parameters/accept_language'
+        - $ref: "#/components/parameters/by_id"
+        - $ref: "#/components/parameters/accept_language"
       responses:
-        '200':
+        "200":
           description: Certification
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Certification'
+                $ref: "#/components/schemas/Certification"
 
   /v1/languages:
     get:
@@ -357,22 +357,22 @@ paths:
       tags:
         - Languages
       parameters:
-        - $ref: '#/components/parameters/accept_language'
-        - $ref: '#/components/parameters/query'
-        - $ref: '#/components/parameters/language'
-        - $ref: '#/components/parameters/proficiency'
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/per_page'
+        - $ref: "#/components/parameters/accept_language"
+        - $ref: "#/components/parameters/query"
+        - $ref: "#/components/parameters/language"
+        - $ref: "#/components/parameters/proficiency"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
       responses:
-        '200':
+        "200":
           description: Paginated list of languages
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedLanguages'
+                $ref: "#/components/schemas/PaginatedLanguages"
 
   /v1/contact-info/{id}:
     get:
@@ -382,18 +382,18 @@ paths:
       tags:
         - Contact
       parameters:
-        - $ref: '#/components/parameters/by_id'
-        - $ref: '#/components/parameters/accept_language'
+        - $ref: "#/components/parameters/by_id"
+        - $ref: "#/components/parameters/accept_language"
       responses:
-        '200':
+        "200":
           description: Contacts
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ContactInfo'
+                $ref: "#/components/schemas/ContactInfo"
 
   /v1/contact-info/{id}/social:
     get:
@@ -403,20 +403,76 @@ paths:
       tags:
         - Contact
       parameters:
-        - $ref: '#/components/parameters/by_id'
-        - $ref: '#/components/parameters/accept_language'
+        - $ref: "#/components/parameters/by_id"
+        - $ref: "#/components/parameters/accept_language"
       responses:
-        '200':
+        "200":
           description: Social links
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SocialLink'
+                  $ref: "#/components/schemas/SocialLink"
+
+  /v1/contact/form:
+    post:
+      operationId: sendContactFormEmail
+      summary: Send contact form by email
+      description: Receive contact form data and forward it by email.
+      tags:
+        - Contact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactFormRequest"
+            examples:
+              formRequest:
+                summary: Valid contact form request
+                value:
+                  name: John Doe
+                  email: john.doe@example.com
+                  subject: Project opportunity
+                  message: I would like to discuss a potential collaboration.
+                  phone: "+34600111222"
+                  website: ""
+                  captchaToken: 03AFcWeA4x2SAMPLE_TOKEN
+      responses:
+        "202":
+          description: Contact form accepted for email delivery
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "422":
+          description: Validation error in contact form payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error while sending the email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          description: Invalid contact form payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/awards:
     get:
@@ -426,22 +482,22 @@ paths:
       tags:
         - Awards
       parameters:
-        - $ref: '#/components/parameters/accept_language'
-        - $ref: '#/components/parameters/query'
-        - $ref: '#/components/parameters/start_year'
-        - $ref: '#/components/parameters/end_year'
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/per_page'
+        - $ref: "#/components/parameters/accept_language"
+        - $ref: "#/components/parameters/query"
+        - $ref: "#/components/parameters/start_year"
+        - $ref: "#/components/parameters/end_year"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
       responses:
-        '200':
+        "200":
           description: Paginated list of awards
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedAwards'
+                $ref: "#/components/schemas/PaginatedAwards"
 
   /v1/references:
     get:
@@ -451,31 +507,30 @@ paths:
       tags:
         - References
       parameters:
-        - $ref: '#/components/parameters/accept_language'
-        - $ref: '#/components/parameters/query'
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/per_page'
+        - $ref: "#/components/parameters/accept_language"
+        - $ref: "#/components/parameters/query"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
       responses:
-        '200':
+        "200":
           description: Paginated list of references
           headers:
             Content-Language:
-              $ref: '#/components/headers/Content-Language'
+              $ref: "#/components/headers/Content-Language"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedReferences'
+                $ref: "#/components/schemas/PaginatedReferences"
 
 components:
   parameters:
-    
     accept_language:
       name: Accept-Language
       in: header
       required: false
       schema:
         type: string
-    
+
     by_id:
       name: id
       in: path
@@ -484,14 +539,14 @@ components:
       schema:
         type: string
         format: uuid
-    
+
     query:
       name: query
       in: query
       description: Free text search term.
       schema:
         type: string
-    
+
     page:
       name: page
       in: query
@@ -500,7 +555,7 @@ components:
         type: integer
         minimum: 1
         default: 1
-    
+
     per_page:
       name: per_page
       in: query
@@ -510,63 +565,63 @@ components:
         minimum: 1
         maximum: 200
         default: 20
-    
+
     sort:
       name: sort
       in: query
       description: Sort field, use prefix - for descending (e.g. start_date or -start_date).
       schema:
         type: string
-    
+
     tags:
       name: tags
       in: query
       description: Filter by tags; multiple values separated by commas.
       schema:
         type: string
-    
+
     level:
       name: level
       in: query
       description: Skill level or seniority (junior, mid, senior, expert).
       schema:
         type: string
-    
+
     company:
       name: company
       in: query
       description: Filter by company.
       schema:
         type: string
-    
+
     start_year:
       name: start_year
       in: query
       description: Start year (filter by year range).
       schema:
         type: integer
-    
+
     end_year:
       name: end_year
       in: query
       description: End year (filter by year range).
       schema:
         type: integer
-    
+
     location:
       name: location
       in: query
       description: Filter by location/city/country.
       schema:
         type: string
-    
+
     language:
       name: language
       in: query
       description: Filter by language (ISO code or name).
       schema:
         type: string
-    
+
     proficiency:
       name: proficiency
       in: query
@@ -575,7 +630,6 @@ components:
         type: string
 
   headers:
-    
     Content-Language:
       description: Language of the response content.
       schema:
@@ -758,17 +812,17 @@ components:
           type: array
           description: List of email addresses
           items:
-            $ref: '#/components/schemas/EmailAddress'
+            $ref: "#/components/schemas/EmailAddress"
         phoneNumber:
           type: array
           description: List of phone numbers (use international format)
           items:
-            $ref: '#/components/schemas/PhoneNumber'
+            $ref: "#/components/schemas/PhoneNumber"
         socialMedia:
           type: array
           description: List of social media or professional profile links
           items:
-            $ref: '#/components/schemas/SocialLink'
+            $ref: "#/components/schemas/SocialLink"
       description: Contact information including email address, phone numbers and social media.
 
     EmailAddress:
@@ -811,11 +865,92 @@ components:
         username:
           type: string
 
+    ContactFormRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - email
+        - subject
+        - message
+        - website
+        - captchaToken
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          pattern: '^[A-Za-zÀ-ÖØ-öø-ÿ''\-\s]{2,100}$'
+          example: John Doe
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          pattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+          example: john.doe@example.com
+        subject:
+          type: string
+          minLength: 3
+          maxLength: 150
+          pattern: "^[^<>]{3,150}$"
+          example: Project Opportunity
+        message:
+          type: string
+          minLength: 10
+          maxLength: 5000
+          pattern: "^[^<>]{10,5000}$"
+          example: I would like to discuss a potential project opportunity.
+        phone:
+          type: string
+          minLength: 7
+          maxLength: 20
+          pattern: "^\\+?[0-9() .-]{7,20}$"
+          example: "+34600111222"
+        website:
+          type: string
+          description: Optional website field.
+          maxLength: 0
+          pattern: "^$"
+          default: ""
+          example: ""
+        captchaToken:
+          type: string
+          description: Captcha verification token generated by the client widget.
+          minLength: 20
+          maxLength: 4096
+          pattern: "^[A-Za-z0-9._-]{20,4096}$"
+          example: 03AFcWeA4x2SAMPLE_TOKEN
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Request accepted
+
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: Validation failed
+        errors:
+          type: array
+          items:
+            type: string
+          example:
+            - email must be a valid email address
+            - website must be empty
+            - captchaToken is invalid or expired
+
     Award:
       type: object
       properties:
         id:
           type: string
+          format: uuid
         title:
           type: string
         issuer:
@@ -836,7 +971,7 @@ components:
         relationship:
           type: string
         contact:
-          $ref: '#/components/schemas/ContactInfo'
+          $ref: "#/components/schemas/ContactInfo"
         note:
           type: string
 
@@ -846,9 +981,9 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Skill'
+            $ref: "#/components/schemas/Skill"
         meta:
-          $ref: '#/components/schemas/PaginationMeta'
+          $ref: "#/components/schemas/PaginationMeta"
 
     PaginatedExperiences:
       type: object
@@ -856,9 +991,9 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Experience'
+            $ref: "#/components/schemas/Experience"
         meta:
-          $ref: '#/components/schemas/PaginationMeta'
+          $ref: "#/components/schemas/PaginationMeta"
 
     PaginatedEducation:
       type: object
@@ -866,9 +1001,9 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Education'
+            $ref: "#/components/schemas/Education"
         meta:
-          $ref: '#/components/schemas/PaginationMeta'
+          $ref: "#/components/schemas/PaginationMeta"
 
     PaginatedProjects:
       type: object
@@ -876,9 +1011,9 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Project'
+            $ref: "#/components/schemas/Project"
         meta:
-          $ref: '#/components/schemas/PaginationMeta'
+          $ref: "#/components/schemas/PaginationMeta"
 
     PaginatedCertifications:
       type: object
@@ -886,9 +1021,9 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Certification'
+            $ref: "#/components/schemas/Certification"
         meta:
-          $ref: '#/components/schemas/PaginationMeta'
+          $ref: "#/components/schemas/PaginationMeta"
 
     PaginatedLanguages:
       type: object
@@ -896,9 +1031,9 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Language'
+            $ref: "#/components/schemas/Language"
         meta:
-          $ref: '#/components/schemas/PaginationMeta'
+          $ref: "#/components/schemas/PaginationMeta"
 
     PaginatedAwards:
       type: object
@@ -906,9 +1041,9 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Award'
+            $ref: "#/components/schemas/Award"
         meta:
-          $ref: '#/components/schemas/PaginationMeta'
+          $ref: "#/components/schemas/PaginationMeta"
 
     PaginatedReferences:
       type: object
@@ -916,6 +1051,6 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Reference'
+            $ref: "#/components/schemas/Reference"
         meta:
-          $ref: '#/components/schemas/PaginationMeta'
+          $ref: "#/components/schemas/PaginationMeta"
