@@ -11,6 +11,10 @@ info:
       - Always returns application/json.
       - Token validation is required server-side.
       - Tokens are single-use and expire after 300 seconds.
+  contact:
+    name: Alberto González
+    email: contact@alberto-gonzalez.es
+    url: https://alberto-gonzalez.es
 
 servers:
   - url: https://challenges.cloudflare.com
