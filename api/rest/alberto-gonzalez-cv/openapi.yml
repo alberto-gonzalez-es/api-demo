@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Curriculum Vitae API
-  version: 0.0.12
+  version: 0.0.13
   description: |
     This is the OpenAPI specification for Alberto González's Curriculum Vitae (CV) API.
   contact:
@@ -640,7 +640,7 @@ components:
         type: string
 
     idempotenceKey:
-      name: idempotenceKey
+      name: Idempotency-Key
       in: header
       required: true
       description: Unique key used to make contact form submission idempotent.
