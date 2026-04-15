@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Curriculum Vitae API
-  version: 0.0.11
+  version: 0.0.12
   description: |
     This is the OpenAPI specification for Alberto González's Curriculum Vitae (CV) API.
   contact:
@@ -427,6 +427,8 @@ paths:
       description: Receive contact form data and forward it by email.
       tags:
         - Contact
+      parameters:
+        - $ref: "#/components/parameters/idempotenceKey"
       requestBody:
         required: true
         content:
@@ -451,8 +453,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Invalid request syntax, malformed JSON, or missing/invalid idempotenceKey header
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Idempotency conflict for idempotenceKey
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "422":
-          description: Validation error in contact form payload
+          description: Validation error in contact form fields
           content:
             application/json:
               schema:
@@ -465,12 +479,6 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal server error while sending the email
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "400":
-          description: Invalid contact form payload
           content:
             application/json:
               schema:
@@ -631,6 +639,16 @@ components:
       schema:
         type: string
 
+    idempotenceKey:
+      name: idempotenceKey
+      in: header
+      required: true
+      description: Unique key used to make contact form submission idempotent.
+      schema:
+        type: string
+        format: uuid
+      example: 8d065702-f665-4f14-aec6-2f83049490d6
+
   headers:
     Content-Language:
       description: Language of the response content.
@@ -712,9 +730,10 @@ components:
           type: string
           format: date
         end_date:
-          type: string
+          type:
+            - string
+            - "null"
           format: date
-          nullable: true
         description:
           type: string
         responsibilities:
@@ -745,9 +764,10 @@ components:
           type: string
           format: date
         end_date:
-          type: string
+          type:
+            - string
+            - "null"
           format: date
-          nullable: true
         grade:
           type: string
         description:
@@ -766,9 +786,10 @@ components:
           type: string
           format: date
         end_date:
-          type: string
+          type:
+            - string
+            - "null"
           format: date
-          nullable: true
         url:
           type: string
         repo:
