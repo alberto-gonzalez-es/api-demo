@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Curriculum Vitae API
-  version: 0.0.14
+  version: 0.0.15
   description: |
     This is the OpenAPI specification for Alberto González's Curriculum Vitae (CV) API.
   contact:
@@ -720,6 +720,7 @@ components:
       properties:
         id:
           type: string
+          format: uuid
         title:
           type: string
         company:
@@ -754,6 +755,7 @@ components:
       properties:
         id:
           type: string
+          format: uuid
         institution:
           type: string
         degree:
