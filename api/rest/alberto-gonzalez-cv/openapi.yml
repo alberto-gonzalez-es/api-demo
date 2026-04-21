@@ -567,7 +567,7 @@ components:
         default: 1
 
     per_page:
-      name: per_page
+      name: perPage
       in: query
       description: Items per page.
       schema:
@@ -586,9 +586,13 @@ components:
     tags:
       name: tags
       in: query
-      description: Filter by tags; multiple values separated by commas.
+      description: Filter by tags.
+      style: form
+      explode: false
       schema:
-        type: string
+        type: array
+        items:
+          type: string
 
     level:
       name: level
@@ -605,18 +609,22 @@ components:
         type: string
 
     start_year:
-      name: start_year
+      name: startYear
       in: query
       description: Start year (filter by year range).
       schema:
         type: integer
+        minimum: 1900
+        maximum: 2200
 
     end_year:
-      name: end_year
+      name: endYear
       in: query
       description: End year (filter by year range).
       schema:
         type: integer
+        minimum: 1900
+        maximum: 2200
 
     location:
       name: location
