@@ -715,6 +715,21 @@ components:
         endorsements:
           type: integer
 
+    Company:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        website_url:
+          type: string
+          format: uri
+        logo_url:
+          type: string
+          format: uri
+
     Experience:
       type: object
       properties:
@@ -724,7 +739,7 @@ components:
         title:
           type: string
         company:
-          type: string
+          $ref: "#/components/schemas/Company"
         location:
           type: string
         start_date:
