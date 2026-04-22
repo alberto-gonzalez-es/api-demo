@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Curriculum Vitae API
-  version: 0.0.16
+  version: 0.0.17
   description: |
     This is the OpenAPI specification for Alberto González's Curriculum Vitae (CV) API.
   contact:
@@ -715,7 +715,7 @@ components:
         endorsements:
           type: integer
 
-    Company:
+    Organization:
       type: object
       properties:
         id:
@@ -739,7 +739,7 @@ components:
         title:
           type: string
         company:
-          $ref: "#/components/schemas/Company"
+          $ref: "#/components/schemas/Organization"
         location:
           type: string
         start_date:
@@ -772,7 +772,7 @@ components:
           type: string
           format: uuid
         institution:
-          type: string
+          $ref: "#/components/schemas/Organization"
         degree:
           type: string
         field:
