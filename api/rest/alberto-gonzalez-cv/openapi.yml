@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Curriculum Vitae API
-  version: 0.0.15
+  version: 0.0.16
   description: |
     This is the OpenAPI specification for Alberto González's Curriculum Vitae (CV) API.
   contact:
@@ -158,13 +158,12 @@ paths:
     get:
       operationId: getExperiences
       summary: List work experiences
-      description: Filter by company, dates, location, tags, search, and pagination.
+      description: Filter dates, location, tags, search, and pagination.
       tags:
         - Experience
       parameters:
         - $ref: "#/components/parameters/accept_language"
         - $ref: "#/components/parameters/query"
-        - $ref: "#/components/parameters/company"
         - $ref: "#/components/parameters/start_year"
         - $ref: "#/components/parameters/end_year"
         - $ref: "#/components/parameters/location"
@@ -598,13 +597,6 @@ components:
       name: level
       in: query
       description: Skill level or seniority (junior, mid, senior, expert).
-      schema:
-        type: string
-
-    company:
-      name: company
-      in: query
-      description: Filter by company.
       schema:
         type: string
 
