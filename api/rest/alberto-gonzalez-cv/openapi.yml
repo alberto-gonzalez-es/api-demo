@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Curriculum Vitae API
-  version: 0.0.18
+  version: 0.0.19
   description: |
     This is the OpenAPI specification for Alberto González's Curriculum Vitae (CV) API.
   contact:
@@ -579,7 +579,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/TagsStandardsResponse"
               example:
-                allowedTags: [backend, frontend, fullstack, devops, cloud, api, automation, open-source]
+                tags:
+                  - id: 550e8400-e29b-41d4-a716-446655440000
+                    name: Backend
+                  - id: 661f9511-f37c-52e5-b827-557766551111
+                    name: Frontend
+                  - id: 772a0622-048d-63f6-c938-668877662222
+                    name: DevOps
 
 components:
   parameters:
@@ -645,13 +651,15 @@ components:
     tags:
       name: tags
       in: query
-      description: Filter by tags.
+      description: Filter by tag UUIDs.
       style: form
       explode: false
       schema:
         type: array
         items:
           type: string
+          format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000,661f9511-f37c-52e5-b827-557766551111
 
     level:
       name: level
@@ -1168,13 +1176,33 @@ components:
             type: string
           example: [start_date, end_date, title, location]
 
+    Tag:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        name:
+          type: string
+          example: Backend
+
     TagsStandardsResponse:
       type: object
       required:
-        - allowedTags
+        - tags
       properties:
-        allowedTags:
+        tags:
           type: array
           items:
-            type: string
-          example: [backend, frontend, fullstack, devops, cloud, architecture, mentoring, management]
+            $ref: "#/components/schemas/Tag"
+          example:
+            - id: 550e8400-e29b-41d4-a716-446655440000
+              name: Backend
+            - id: 661f9511-f37c-52e5-b827-557766551111
+              name: Frontend
+            - id: 772a0622-048d-63f6-c938-668877662222
+              name: DevOps
