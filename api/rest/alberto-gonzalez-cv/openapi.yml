@@ -659,7 +659,9 @@ components:
         items:
           type: string
           format: uuid
-      example: 550e8400-e29b-41d4-a716-446655440000,661f9511-f37c-52e5-b827-557766551111
+      example:
+        - 550e8400-e29b-41d4-a716-446655440000
+        - 661f9511-f37c-52e5-b827-557766551111
 
     level:
       name: level
