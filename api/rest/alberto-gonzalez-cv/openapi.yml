@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Curriculum Vitae API
-  version: 0.0.17
+  version: 0.0.18
   description: |
     This is the OpenAPI specification for Alberto González's Curriculum Vitae (CV) API.
   contact:
@@ -38,6 +38,8 @@ tags:
     description: Awards and recognitions
   - name: References
     description: Professional references
+  - name: QueryStandards
+    description: Generic query standards for filters, sorting and pagination
 
 paths:
   /v1/cv/download:
@@ -531,6 +533,54 @@ paths:
               schema:
                 $ref: "#/components/schemas/PaginatedReferences"
 
+  /v1/query-standards/{resource}/sort:
+    get:
+      operationId: getSortStandardsByResource
+      summary: Get sort standards by resource
+      description: Return the allowed sort fields and default order for a given resource (e.g. experience).
+      tags:
+        - QueryStandards
+      parameters:
+        - $ref: "#/components/parameters/resource"
+      responses:
+        "200":
+          description: Sort standards for the selected resource
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SortStandardsResponse"
+              examples:
+                experience:
+                  summary: Sort standards for experience
+                  value:
+                    resource: experience
+                    default: -start_date
+                    allowedFields: [start_date, end_date, title, location]
+                    syntax: prefix field with '-' for descending
+        "404":
+          description: Resource not supported
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/query-standards/tags:
+    get:
+      operationId: getAllTagsStandards
+      summary: Get tags standards for all resources
+      description: Return the allowed tag values for every resource that supports tag filtering.
+      tags:
+        - QueryStandards
+      responses:
+        "200":
+          description: Tags standards for all resources
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagsStandardsResponse"
+              example:
+                allowedTags: [backend, frontend, fullstack, devops, cloud, api, automation, open-source]
+
 components:
   parameters:
     accept_language:
@@ -548,6 +598,16 @@ components:
       schema:
         type: string
         format: uuid
+
+    resource:
+      name: resource
+      in: path
+      required: true
+      description: Resource name to fetch query standards for.
+      schema:
+        type: string
+        enum: [skills, experience, education, projects, certification, languages, awards, references]
+      example: experience
 
     query:
       name: query
@@ -702,6 +762,7 @@ components:
       properties:
         id:
           type: string
+          format: uuid
         name:
           type: string
         level:
@@ -1091,3 +1152,29 @@ components:
             $ref: "#/components/schemas/Reference"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
+
+    SortStandardsResponse:
+      type: object
+      required:
+        - default
+        - allowedFields
+      properties:
+        default:
+          type: string
+          example: start_date
+        allowedFields:
+          type: array
+          items:
+            type: string
+          example: [start_date, end_date, title, location]
+
+    TagsStandardsResponse:
+      type: object
+      required:
+        - allowedTags
+      properties:
+        allowedTags:
+          type: array
+          items:
+            type: string
+          example: [backend, frontend, fullstack, devops, cloud, architecture, mentoring, management]
