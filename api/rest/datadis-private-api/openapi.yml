@@ -1,0 +1,414 @@
+openapi: 3.0.3
+info:
+  title: Datadis Private API
+  version: 0.1.0
+  description: |
+    Unofficial OpenAPI specification for Datadis private API endpoints commonly used
+    to authenticate, list supplies, retrieve contract details, consumption data and
+    maximum power data.
+
+    Notes:
+    - Authentication returns a raw bearer token as text/plain.
+    - Authenticated endpoints require `Authorization: Bearer <token>`.
+    - Date formats are based on community clients: consumption normally uses `yyyy/MM/dd`,
+      while maximum power normally uses `yyyy/MM`.
+    - This specification is unofficial and may need adjustments if Datadis changes the API.
+servers:
+  - url: https://datadis.es
+    description: Datadis production
+
+tags:
+  - name: Authentication
+  - name: Supplies
+  - name: Contracts
+  - name: Consumption
+  - name: Power
+
+paths:
+  /nikola-auth/tokens/login:
+    post:
+      tags: [Authentication]
+      operationId: login
+      summary: Authenticate and obtain bearer token
+      description: Authenticates with Datadis credentials and returns a raw bearer token.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  description: Datadis username, usually NIF/NIE associated with the account.
+                  example: 12345678Z
+                password:
+                  type: string
+                  format: password
+                  example: my-password
+      responses:
+        '200':
+          description: Bearer token as plain text.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /api-private/api/get-supplies:
+    get:
+      tags: [Supplies]
+      operationId: getSupplies
+      summary: Get electricity supplies
+      description: Returns the supplies associated with the authenticated Datadis account.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AuthorizedNif'
+      responses:
+        '200':
+          description: List of supplies.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Supply'
+        '401':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /api-private/api/get-contract-detail:
+    get:
+      tags: [Contracts]
+      operationId: getContractDetail
+      summary: Get contract details for a supply
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Cups'
+        - $ref: '#/components/parameters/DistributorCode'
+        - $ref: '#/components/parameters/AuthorizedNif'
+      responses:
+        '200':
+          description: Contract details.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContractDetail'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /api-private/api/get-consumption-data:
+    get:
+      tags: [Consumption]
+      operationId: getConsumptionData
+      summary: Get consumption data for a supply
+      description: Returns hourly or quarter-hourly consumption data for a supply in a date range.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Cups'
+        - $ref: '#/components/parameters/DistributorCode'
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\\d{4}/\\d{2}/\\d{2}$'
+            example: '2026/05/01'
+          description: Start date in `yyyy/MM/dd` format.
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\\d{4}/\\d{2}/\\d{2}$'
+            example: '2026/05/31'
+          description: End date in `yyyy/MM/dd` format.
+        - name: measurementType
+          in: query
+          required: true
+          description: Measurement granularity. `0` = hourly, `1` = quarter-hourly.
+          schema:
+            type: integer
+            enum: [0, 1]
+            example: 0
+        - name: pointType
+          in: query
+          required: true
+          schema:
+            type: integer
+            example: 5
+          description: Point type obtained from `get-supplies`.
+        - $ref: '#/components/parameters/AuthorizedNif'
+      responses:
+        '200':
+          description: Consumption measurements.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConsumptionData'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /api-private/api/get-max-power:
+    get:
+      tags: [Power]
+      operationId: getMaxPower
+      summary: Get maximum power data for a supply
+      description: Returns maximum power measurements in kW for a supply in a date range.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Cups'
+        - $ref: '#/components/parameters/DistributorCode'
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\\d{4}/\\d{2}$'
+            example: '2026/05'
+          description: Start month in `yyyy/MM` format.
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\\d{4}/\\d{2}$'
+            example: '2026/05'
+          description: End month in `yyyy/MM` format.
+        - $ref: '#/components/parameters/AuthorizedNif'
+      responses:
+        '200':
+          description: Maximum power measurements.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MaxPower'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    AuthorizedNif:
+      name: authorizedNif
+      in: query
+      required: false
+      description: Optional NIF of an authorized person/account.
+      schema:
+        type: string
+        example: 12345678Z
+    Cups:
+      name: cups
+      in: query
+      required: true
+      description: CUPS code of the supply.
+      schema:
+        type: string
+        example: ES0021000000000000AB
+    DistributorCode:
+      name: distributorCode
+      in: query
+      required: true
+      description: Distributor code obtained from `get-supplies`.
+      schema:
+        oneOf:
+          - type: string
+          - type: integer
+        example: '2'
+
+  responses:
+    Error:
+      description: Error response. Shape may vary depending on Datadis backend.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+        text/plain:
+          schema:
+            type: string
+
+  schemas:
+    Supply:
+      type: object
+      properties:
+        address:
+          type: string
+          example: Calle Example 1
+        cups:
+          type: string
+          example: ES0021000000000000AB
+        postalCode:
+          type: string
+          example: '28001'
+        province:
+          type: string
+          example: Madrid
+        municipality:
+          type: string
+          example: Madrid
+        distributor:
+          type: string
+          example: Example Distribución
+        validDateFrom:
+          type: string
+          example: '2020/09'
+        validDateTo:
+          type: string
+          nullable: true
+          example: '2026/09'
+        pointType:
+          type: integer
+          example: 5
+        distributorCode:
+          type: string
+          example: '2'
+      additionalProperties: true
+
+    ContractDetail:
+      type: object
+      properties:
+        cups:
+          type: string
+          example: ES0021000000000000AB
+        distributor:
+          type: string
+          example: Example Distribución
+        marketer:
+          type: string
+          example: Example Marketer
+        tension:
+          type: string
+          example: Baja tensión
+        accesFare:
+          type: string
+          description: Access tariff/fare. Field name appears as `accesFare` in community clients.
+          example: 2.0TD
+        province:
+          type: string
+          example: Madrid
+        municipality:
+          type: string
+          example: Madrid
+        postalCode:
+          type: string
+          example: '28001'
+        contractedPowerkW:
+          type: array
+          items:
+            type: number
+            format: double
+          example: [3.45, 3.45]
+        timeDiscrimination:
+          type: string
+          example: 'S'
+        modePowerControl:
+          type: string
+          example: ICP
+        startDate:
+          type: string
+          example: '2025/01/01'
+        endDate:
+          type: string
+          nullable: true
+          example: null
+      additionalProperties: true
+
+    ConsumptionData:
+      type: object
+      properties:
+        cups:
+          type: string
+          example: ES0021000000000000AB
+        date:
+          type: string
+          example: '2026/05/01'
+        time:
+          type: string
+          example: '01:00'
+        consumptionKWh:
+          type: number
+          format: double
+          example: 0.243
+        obtainMethod:
+          type: string
+          example: Real
+        surplusEnergyKWh:
+          type: number
+          format: double
+          nullable: true
+          example: 0.0
+      additionalProperties: true
+
+    MaxPower:
+      type: object
+      properties:
+        cups:
+          type: string
+          example: ES0021000000000000AB
+        date:
+          type: string
+          example: '2026/05/01'
+        time:
+          type: string
+          example: '21:15'
+        maxPower:
+          type: number
+          format: double
+          example: 4.12
+        period:
+          type: string
+          example: P1
+      additionalProperties: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Unauthorized
+        error:
+          type: string
+          example: Unauthorized
+        status:
+          type: integer
+          example: 401
+      additionalProperties: true
