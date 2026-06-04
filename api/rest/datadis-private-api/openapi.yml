@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Datadis Private API
-  version: 0.1.0
+  version: 0.2.0
   description: |
     Unofficial OpenAPI specification for Datadis private API endpoints commonly used
     to authenticate, list supplies, retrieve contract details, consumption data and
